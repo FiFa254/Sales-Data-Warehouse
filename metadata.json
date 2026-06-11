@@ -1,0 +1,6 @@
+{
+  "name": "PHP MySQL Sales Data Warehouse",
+  "description": "Sales data warehouse and customer trend analytics using PHP and MySQL, featuring interactive ETL pipeline simulation, SQL playground, and live AI engineering guide.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
