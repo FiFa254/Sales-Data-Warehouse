@@ -76,14 +76,7 @@ app.post("/api/query", handle(async (req, res) => {
 const apiKey = process.env.GEMINI_API_KEY;
 let ai: GoogleGenAI | null = null;
 if (apiKey) {
-  ai = new GoogleGenAI({
-    apiKey: apiKey,
-    httpOptions: {
-      headers: {
-        'User-Agent': 'aistudio-build',
-      }
-    }
-  });
+  ai = new GoogleGenAI({ apiKey });
 } else {
   console.warn("WARNING: GEMINI_API_KEY environment variable is not set. Chat will operate in simulated assistant mode.");
 }
