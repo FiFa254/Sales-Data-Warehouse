@@ -31,7 +31,7 @@ Manual: `npm install`, `npm run build`, `npm start` (or `npm run dev` for hot re
 |---|---|
 | `MSSQL_CONNECTION_STRING` | `Driver={ODBC Driver 17 for SQL Server};Server=localhost;Database=SalesDW;Trusted_Connection=yes;` |
 
-On start the server creates the `SalesDW` database, its tables, and the demo source data (Windows login, no password).
+On start the server creates the `SalesDW` database and its tables (Windows login, no password). It starts empty: add customers, products and orders in the "ETL Pipeline" tab, or click "Load demo data" (or set `SEED_DEMO_DATA=true`).
 
 | Schema | Tables |
 |---|---|
@@ -52,7 +52,10 @@ Code: `server/db.ts` (connection), `server/warehouse.ts` (schema, ETL, dashboard
 | POST | `/api/etl/run` | Run the ETL; returns each step with row counts and timings |
 | GET | `/api/source/options` | Customers and products for the order form |
 | POST | `/api/source/orders` | Add a completed order to the source tables |
-| POST | `/api/source/reset` | Restore the demo source data and empty the warehouse |
+| POST | `/api/source/customers` | Add a customer |
+| POST | `/api/source/products` | Add a product |
+| POST | `/api/source/reset` | Replace all data with the demo data set |
+| POST | `/api/source/clear` | Delete all source data and the warehouse |
 | POST | `/api/query` | Run a read-only query (`{ "sql": "SELECT ..." }`) |
 | POST | `/api/chat` | AI guide (Gemini; offline answers without a key) |
 
