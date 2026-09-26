@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   TrendingUp,
   Server,
@@ -35,64 +35,38 @@ import EtlSimulator from "./components/EtlSimulator";
 import SqlPlayground from "./components/SqlPlayground";
 import CodeExporter from "./components/CodeExporter";
 import WebChat from "./components/WebChat";
+import SourceOrders from "./components/SourceOrders";
+import { api, Dashboard, money } from "./api";
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<"dashboard" | "etl" | "schema" | "queries" | "code">("dashboard");
-  const [isEtlDone, setIsEtlDone] = useState<boolean>(false);
+  const [dashboard, setDashboard] = useState<Dashboard | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
-  // Simulated metrics
-  const metrics = isEtlDone
-    ? {
-        revenue: 304800,
-        cost: 215200,
-        profit: 89600,
-        count: 30,
-        margin: "29.40",
-        aov: "10,160"
-      }
-    : {
-        revenue: 44700,
-        cost: 31100,
-        profit: 13600,
-        count: 3,
-        margin: "30.42",
-        aov: "14,900"
-      };
+  // Every number on the dashboard comes from SQL Server: the star schema after an ETL run,
+  // otherwise the source (OLTP) tables.
+  const refresh = useCallback(async () => {
+    try {
+      setDashboard(await api.dashboard());
+      setLoadError(null);
+    } catch (err: any) {
+      setLoadError(err.message);
+    }
+  }, []);
 
-  // Recharts Data Sets
-  const trendData = isEtlDone
-    ? [
-        { month: "Jan", Revenue: 44700, Profit: 13600 },
-        { month: "Feb", Revenue: 14800, Profit: 4400 },
-        { month: "Mar", Revenue: 45800, Profit: 12700 },
-        { month: "Apr", Revenue: 53300, Profit: 15800 },
-        { month: "May", Revenue: 57000, Profit: 16000 },
-        { month: "Jun", Revenue: 89200, Profit: 27100 }
-      ]
-    : [
-        { month: "Jan", Revenue: 44700, Profit: 13600 },
-        { month: "Feb", Revenue: 0, Profit: 0 },
-        { month: "Mar", Revenue: 0, Profit: 0 },
-        { month: "Apr", Revenue: 0, Profit: 0 },
-        { month: "May", Revenue: 0, Profit: 0 },
-        { month: "Jun", Revenue: 0, Profit: 0 }
-      ];
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
 
-  const tierData = [
-    { name: "Platinum", Spending: isEtlDone ? 64150 : 0, avgValue: isEtlDone ? 16037 : 0 },
-    { name: "Gold", Spending: isEtlDone ? 151350 : 0, avgValue: isEtlDone ? 12612 : 0 },
-    { name: "Silver", Spending: isEtlDone ? 66950 : 44700, avgValue: isEtlDone ? 11158 : 14900 },
-    { name: "Standard", Spending: isEtlDone ? 22350 : 0, avgValue: isEtlDone ? 7450 : 0 }
-  ];
-
-  const categoryPerformance = [
-    { name: "Electronics", Profit: isEtlDone ? 41200 : 8500, sales: isEtlDone ? 151200 : 21700 },
-    { name: "Furniture", Profit: isEtlDone ? 30800 : 0, sales: isEtlDone ? 84500 : 0 },
-    { name: "Home Appliance", Profit: isEtlDone ? 17600 : 5100, sales: isEtlDone ? 69100 : 23000 }
-  ];
+  const isEtlDone = dashboard?.source === "warehouse";
+  const pendingOrders = dashboard?.ordersNotInWarehouse ?? 0;
+  const metrics = dashboard?.metrics ?? { revenue: 0, cost: 0, profit: 0, orders: 0, items: 0, margin: 0, aov: 0 };
+  const trendData = dashboard?.trend ?? [];
+  const tierData = dashboard?.tiers ?? [];
+  const categoryPerformance = dashboard?.categories ?? [];
 
   const handleEtlComplete = () => {
-    setIsEtlDone(true);
+    refresh();
   };
 
   return (
@@ -113,14 +87,14 @@ export default function App() {
                 Aether Sales Warehouse
               </h1>
               <p className="text-[10px] uppercase tracking-[0.2em] text-zinc-500 font-mono">
-                Intelligence Layer v4.2 • Star Schema & PHP-MySQL ETL Pipeline
+                Intelligence Layer v4.2 • Star Schema & SQL Server ETL Pipeline
               </p>
             </div>
           </div>
           <div className="flex items-center gap-2">
             <span className="text-[10px] bg-[#141414] border border-[#262626] text-zinc-400 font-bold px-3 py-1.5 rounded-none flex items-center gap-1.5 font-mono">
               <Clock className="w-3.5 h-3.5 text-[#D4AF37]" />
-              Status: MySQL PRIMARY ACTIVE
+              {loadError ? "SQL Server: OFFLINE" : dashboard ? "SQL Server: SalesDW CONNECTED" : "SQL Server: CONNECTING..."}
             </span>
           </div>
         </div>
@@ -131,15 +105,21 @@ export default function App() {
         {/* Left Interactive & Dashboard Workspace (TABS) */}
         <div className="lg:col-span-8 space-y-6 flex flex-col">
           
+          {loadError && (
+            <div className="bg-[#141414] border border-red-900/50 p-5 rounded-none text-[11px] text-red-300 font-mono">
+              Cannot load data from SQL Server: {loadError}
+            </div>
+          )}
+
           {/* Quick Notice Banner if ETL not run yet */}
-          {!isEtlDone && (
+          {dashboard && !isEtlDone && (
             <div className="bg-[#141414] border border-amber-900/40 p-5 rounded-none flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-[0_0_20px_rgba(212,175,55,0.02)]">
               <div className="flex items-start gap-3">
                 <AlertCircle className="w-5 h-5 text-[#D4AF37] shrink-0 mt-0.5" />
                 <div>
                   <h4 className="text-xs font-serif italic text-amber-200 uppercase tracking-wider">Warehouse Database Not Loaded (OLAP Data Empty)</h4>
                   <p className="text-[11px] text-zinc-400 mt-1 leading-relaxed">
-                    Currently, the analytical dashboard is operating on raw staging data (OLTP). Please navigate to the **"ETL Pipeline"** tab and execute the process to generate the analytics-optimized Star Schema database instantly!
+                    The dashboard is reading the source tables (OLTP) directly. Open the "ETL Pipeline" tab and run the ETL to build the Star Schema in SQL Server.
                   </p>
                 </div>
               </div>
@@ -153,7 +133,22 @@ export default function App() {
             </div>
           )}
 
-          {isEtlDone && (
+          {isEtlDone && pendingOrders > 0 && (
+            <div className="bg-[#141414] border border-amber-900/40 p-5 rounded-none flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <p className="text-[11px] text-zinc-300 leading-relaxed">
+                <span className="text-amber-200 font-bold">{pendingOrders} new source order{pendingOrders > 1 ? "s" : ""}</span> not in the warehouse yet. Run the ETL again to load them.
+              </p>
+              <button
+                onClick={() => setActiveTab("etl")}
+                className="bg-[#D4AF37] hover:bg-amber-300 text-slate-950 text-[11px] font-bold px-4 py-2 rounded-none shrink-0 flex items-center gap-1.5 cursor-pointer font-mono uppercase"
+              >
+                Run ETL
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
+
+          {isEtlDone && pendingOrders === 0 && (
             <div className="bg-[#141414] border border-emerald-900/40 p-5 rounded-none flex items-center gap-4 shadow-[0_0_25px_rgba(16,185,129,0.03)]">
               <div className="w-10 h-10 rounded-none bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0">
                 <Award className="w-5 h-5 text-[#D4AF37]" />
@@ -161,7 +156,7 @@ export default function App() {
               <div>
                 <h4 className="text-xs font-serif italic text-[#D4AF37] uppercase tracking-wider">Warehouse & ETL Scripts Ready!</h4>
                 <p className="text-[11px] text-zinc-400 mt-0.5 leading-relaxed">
-                  The Star Schema multidimensional database has been successfully transformed with computed analytical metrics. You can now download the PHP-MySQL production scripts or run interactive queries.
+                  The dashboard is reading the Star Schema in SQL Server{dashboard?.lastEtl ? ` (last ETL: ${new Date(dashboard.lastEtl.finishedAt).toLocaleString()}, ${dashboard.lastEtl.rowsLoaded} fact rows in ${dashboard.lastEtl.durationMs} ms)` : ""}. Run live queries in the SQL Playground.
                 </p>
               </div>
             </div>
@@ -174,7 +169,7 @@ export default function App() {
               { id: "etl", label: "🔄 ETL Pipeline", icon: Server },
               { id: "schema", label: "🛠️ Star Schema", icon: Layers },
               { id: "queries", label: "💻 SQL Playground", icon: Terminal },
-              { id: "code", label: "💾 PHP & MySQL Source", icon: FileCode }
+              { id: "code", label: "💾 PHP & MySQL Reference", icon: FileCode }
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -201,26 +196,26 @@ export default function App() {
                   {[
                     {
                       label: "Total Revenue",
-                      value: `$${metrics.revenue.toLocaleString()}`,
-                      desc: `${isEtlDone ? "+582%" : "Initial Revenue"}`,
+                      value: money(metrics.revenue),
+                      desc: isEtlDone ? "fact_sales (star schema)" : "oltp tables (source)",
                       color: "text-[#D4AF37]"
                     },
                     {
                       label: "Net Profit",
-                      value: `$${metrics.profit.toLocaleString()}`,
-                      desc: `${isEtlDone ? "+558%" : "Initial Profit"}`,
+                      value: money(metrics.profit),
+                      desc: `Cost ${money(metrics.cost)}`,
                       color: "text-[#D4AF37]"
                     },
                     {
                       label: "Sales Transactions",
-                      value: `${metrics.count} Orders`,
-                      desc: `${isEtlDone ? "+900%" : "Initial Orders"}`,
+                      value: `${metrics.orders} Orders`,
+                      desc: `${metrics.items} items • AOV ${money(metrics.aov)}`,
                       color: "text-[#E0E0E0]"
                     },
                     {
                       label: "Profit Margin",
-                      value: `${metrics.margin}%`,
-                      desc: "Analytical Formula",
+                      value: `${metrics.margin.toFixed(2)}%`,
+                      desc: "profit / revenue",
                       color: "text-zinc-400"
                     }
                   ].map((kpi, idx) => (
@@ -250,7 +245,7 @@ export default function App() {
                         Monthly Sales and Profit Trends
                       </h4>
                       <p className="text-[10.5px] text-zinc-500 mt-1 leading-relaxed">
-                        Analytics model plotted from the Fact Sales table and Time Dimension in the Star Schema (Jan - Jun)
+                        {isEtlDone ? "From fact_sales joined to dim_time in the Star Schema" : "From the source order tables (run the ETL to use the Star Schema)"}
                       </p>
                     </div>
 
@@ -287,7 +282,7 @@ export default function App() {
                         Customer Loyalty Tiers (AOV Profile)
                       </h4>
                       <p className="text-[10.5px] text-zinc-500 mt-1">
-                        Revenues grouped by loyalty tiers (Customer RFM Analyst Profile)
+                        {isEtlDone ? "Lifetime spend per tier from dim_customers (tiers computed by the ETL)" : "Tiers are computed by the ETL - run it to fill this chart"}
                       </p>
                     </div>
 
@@ -332,11 +327,11 @@ export default function App() {
                           <div className="space-y-1.5">
                             <div className="flex justify-between text-[11px] text-zinc-500 font-mono">
                               <span>Revenues:</span>
-                              <span className="font-bold text-zinc-300">${cat.sales.toLocaleString()}</span>
+                              <span className="font-bold text-zinc-300">{money(cat.sales)}</span>
                             </div>
                             <div className="flex justify-between text-[11px] text-zinc-500 font-mono">
                               <span>Net Profit:</span>
-                              <span className="font-bold text-[#D4AF37]">${cat.Profit.toLocaleString()}</span>
+                              <span className="font-bold text-[#D4AF37]">{money(cat.Profit)}</span>
                             </div>
                           </div>
 
@@ -388,7 +383,10 @@ export default function App() {
             )}
 
             {activeTab === "etl" && (
-              <EtlSimulator onEtlComplete={handleEtlComplete} isEtlDone={isEtlDone} />
+              <div className="space-y-6">
+                <EtlSimulator onEtlComplete={handleEtlComplete} isEtlDone={isEtlDone} dashboard={dashboard} />
+                <SourceOrders onChanged={refresh} />
+              </div>
             )}
 
             {activeTab === "schema" && (
@@ -414,7 +412,7 @@ export default function App() {
       {/* Aesthetic Footer */}
       <footer className="border-t border-[#262626] bg-[#0F0F0F] py-8 mt-12 text-center text-[10px] tracking-widest text-zinc-600 font-mono flex flex-col items-center justify-center gap-2">
         <span>© 2026 AETHER SYSTEMS. ALL RIGHTS RESERVED.</span>
-        <span className="opacity-50">ENGINE STRUCTURE: PHP 8.2.12 (FPM) • MYSQL WAREHOUSE PRIMARIES</span>
+        <span className="opacity-50">ENGINE: NODE.JS + EXPRESS API • SQL SERVER (SalesDW)</span>
       </footer>
     </div>
   );

@@ -3,6 +3,8 @@ import path from "path";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI } from "@google/genai";
 import dotenv from "dotenv";
+import { Warehouse, QueryRejected } from "./server/warehouse";
+import { DEFAULT_CONNECTION_STRING } from "./server/db";
 
 dotenv.config();
 
@@ -10,6 +12,50 @@ const app = express();
 app.use(express.json());
 
 const PORT = Number(process.env.PORT) || 3000;
+
+// --- DATABASE (SQL Server, see server/warehouse.ts) ---
+// Default: local SQL Server, Windows login, database SalesDW (created with its tables on first start).
+// Override with MSSQL_CONNECTION_STRING in .env.
+const CONNECTION_STRING = process.env.MSSQL_CONNECTION_STRING || DEFAULT_CONNECTION_STRING;
+let warehouse: Warehouse;
+
+// Wraps async handlers so errors reach the error handler; QueryRejected becomes a 400 with its message.
+const handle = (fn: (req: express.Request, res: express.Response) => Promise<unknown>) =>
+  (req: express.Request, res: express.Response, next: express.NextFunction) => fn(req, res).catch(next);
+
+app.get("/api/health", handle(async (req, res) => {
+  await warehouse.db.query("SELECT 1 AS ok");
+  res.json({ database: "SQL Server", status: "connected" });
+}));
+
+// Dashboard numbers: from the star schema after an ETL run, otherwise straight from the source tables.
+app.get("/api/dashboard", handle(async (req, res) => {
+  res.json(await warehouse.dashboard());
+}));
+
+// Runs the ETL (source tables -> star schema) and returns each step with row counts and timings.
+app.post("/api/etl/run", handle(async (req, res) => {
+  res.json(await warehouse.runEtl());
+}));
+
+// Source system: customers/products for the order form, and new orders.
+app.get("/api/source/options", handle(async (req, res) => {
+  res.json(await warehouse.sourceOptions());
+}));
+
+app.post("/api/source/orders", handle(async (req, res) => {
+  res.json(await warehouse.addOrder(req.body ?? {}));
+}));
+
+app.post("/api/source/reset", handle(async (req, res) => {
+  await warehouse.reset();
+  res.json({ success: true });
+}));
+
+// SQL playground: one read-only SELECT, run as the playground_reader database user.
+app.post("/api/query", handle(async (req, res) => {
+  res.json(await warehouse.runQuery(req.body?.sql));
+}));
 
 // Initialize GoogleGenAI
 const apiKey = process.env.GEMINI_API_KEY;
@@ -110,6 +156,15 @@ app.post("/api/chat", async (req, res) => {
 
 // Start server
 async function startServer() {
+  try {
+    warehouse = await Warehouse.open(CONNECTION_STRING);
+    console.log((await warehouse.seed()) ? "Database: created SalesDW with demo source data" : "Database: connected to SalesDW");
+  } catch (err: any) {
+    console.error("Cannot connect to SQL Server. Check that the SQL Server service is running and MSSQL_CONNECTION_STRING in .env.");
+    console.error(err?.message ?? err);
+    process.exit(1);
+  }
+
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
       server: { middlewareMode: true },
@@ -123,6 +178,13 @@ async function startServer() {
       res.sendFile(path.join(distPath, 'index.html'));
     });
   }
+
+  app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+    if (res.headersSent) return next(err);
+    if (err instanceof QueryRejected) return res.status(400).json({ error: err.message });
+    console.error(`${req.method} ${req.path} failed:`, err?.message ?? err);
+    res.status(500).json({ error: "Database error. Check the server console." });
+  });
 
   app.listen(PORT, "0.0.0.0", () => {
     console.log(`Server running on http://localhost:${PORT}`);
