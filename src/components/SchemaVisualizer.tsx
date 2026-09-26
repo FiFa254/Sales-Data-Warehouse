@@ -129,7 +129,7 @@ export default function SchemaVisualizer() {
               Data Warehouse Architecture (OLTP vs. OLAP Star Schema)
             </h3>
             <p className="text-xs text-zinc-400 mt-1">
-              Visualizing how staging transaction entries map to a clean, highly performing MySQL Star Schema.
+              Visualizing how staging transaction entries map to a clean, highly performing Star Schema (built in SQL Server by the ETL).
             </p>
           </div>
           <div className="flex items-center gap-2 bg-[#0F0F0F] px-3.5 py-1.5 rounded-none border border-[#262626] text-[10px] tracking-wider font-mono font-bold text-zinc-400">

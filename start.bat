@@ -12,6 +12,18 @@ if errorlevel 1 (
     exit /b 1
 )
 
+rem Source tables, star schema and ETL log are stored in SQL Server (database SalesDW, see .env.example).
+sc query MSSQLSERVER 2>nul | find "RUNNING" >nul
+if errorlevel 1 (
+    sc query "MSSQL$SQLEXPRESS" 2>nul | find "RUNNING" >nul
+    if errorlevel 1 (
+        echo [!] SQL Server is not running. Start the "SQL Server ^(MSSQLSERVER^)" service in services.msc,
+        echo     or set MSSQL_CONNECTION_STRING in .env to another server.
+        pause
+        exit /b 1
+    )
+)
+
 if not exist .env (
     copy .env.example .env >nul
     echo [!] Created .env - set GEMINI_API_KEY ^(for the AI guide^), save, and close Notepad.

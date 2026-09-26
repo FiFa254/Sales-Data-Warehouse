@@ -1,26 +1,21 @@
 import React, { useState, useEffect, useRef } from "react";
+import { api, Dashboard, EtlResult } from "../api";
 import { Disc, Play, Server, ArrowRight, CheckCircle2, ChevronRight, Activity, Database, Award } from "lucide-react";
 
 interface EtlSimulatorProps {
   onEtlComplete: (success: boolean) => void;
   isEtlDone: boolean;
+  dashboard: Dashboard | null;
 }
 
-export default function EtlSimulator({ onEtlComplete, isEtlDone }: EtlSimulatorProps) {
+export default function EtlSimulator({ onEtlComplete, isEtlDone, dashboard }: EtlSimulatorProps) {
   const [status, setStatus] = useState<"idle" | "extracting" | "transforming" | "loading" | "completed">(
     isEtlDone ? "completed" : "idle"
   );
   const [progress, setProgress] = useState(isEtlDone ? 100 : 0);
   const [logs, setLogs] = useState<string[]>(
-    isEtlDone
-      ? [
-          "[SYSTEM INITIALIZED] ⚡ Active Connection with Star Schema established.",
-          "[LOADED] dim_customers (10 processed entries - Loyalty scoring mapped)",
-          "[LOADED] dim_products (9 categories classified with cost indexing)",
-          "[LOADED] dim_time (Normalized calendar keys populated)",
-          "[LOADED] fact_sales (30 transaction nodes loaded into OLAP cluster)",
-          "[Success] ETL execution and dimensional mapping completed 100%! Ready for analytical querying."
-        ]
+    isEtlDone && dashboard?.lastEtl
+      ? [`[LAST RUN ${new Date(dashboard.lastEtl.finishedAt).toLocaleString()}] Loaded ${dashboard.lastEtl.rowsLoaded} rows into fact_sales in ${dashboard.lastEtl.durationMs} ms.`]
       : []
   );
   const logContainerRef = useRef<HTMLDivElement>(null);
@@ -34,59 +29,38 @@ export default function EtlSimulator({ onEtlComplete, isEtlDone }: EtlSimulatorP
     if (logContainerRef.current) {
       logContainerRef.current.scrollTop = logContainerRef.current.scrollHeight;
     }
-  }, [logs]);  const handleStartETL = () => {
+  }, [logs]);  const handleStartETL = async () => {
     setStatus("extracting");
+    setProgress(5);
     setLogs([]);
-    addLog("⚡ [Extract] Initiating MySQL connection with staging (OLTP) & analytics (OLAP) schemas...");
-    addLog("🔍 [Extract] Extracting records from staging 'oltp_customers': 10 unique profiles discovered.");
-    addLog("📦 [Extract] Extracting catalog from staging 'oltp_products': 9 active products matched.");
-    
-    let currentProgress = 10;
-    setProgress(currentProgress);
- 
-    // Timeline Simulation
-    setTimeout(() => {
-      currentProgress = 30;
-      setProgress(currentProgress);
-      addLog("📂 [Extract] Extracting transactional ledgers from 'oltp_orders' and 'oltp_order_items'...");
-      addLog("📑 [Extract] Completed ingestion of 30 distinct transaction line-items.");
-      setStatus("transforming");
-      
-      setTimeout(() => {
-        currentProgress = 55;
-        setProgress(currentProgress);
-        addLog("🛠️ [Transform] Starting multidimensional modeling schemas and metric aggregation (Transform Phase)...");
-        addLog("🧮 [Transform] Calculating registration historical year from account dates in 'oltp_customers'...");
-        addLog("👥 [Transform] Computing accumulated spending metrics per customer to assign RFM Loyalty Brackets...");
-        addLog("📊 [Transform] RFM Loyalty brackets configured: Platinum (1), Gold (2), Silver (4), Standard (3).");
-        
-        setTimeout(() => {
-          currentProgress = 75;
-          setProgress(currentProgress);
-          addLog("⏰ [Transform] Formatting calendar timestamps 'order_date' into integer keys (YYYYMMDD) for 'dim_time'...");
-          addLog("🧬 [Transform] Pre-calculating central ledger metrics (quantity * price, cost, net margin) for fact tables...");
-          setStatus("loading");
-          
-          setTimeout(() => {
-            currentProgress = 90;
-            setProgress(currentProgress);
-            addLog("📥 [Load] Inserting structural dimensions into target OLAP schema 'sales_data_warehouse'...");
-            addLog("📥 [Load] Loaded dim_customers dimension with assigned surrogate keys successfully.");
-            addLog("📥 [Load] Loaded dim_products with catalog mapping.");
-            addLog("📥 [Load] Pre-populated dim_time chronologies.");
-            addLog("📥 [Load] Committed 30 central fact streams into fact_sales table successfully.");
-            
-            setTimeout(() => {
-              setProgress(100);
-              setStatus("completed");
-              addLog("✅ === PHP ETL Pipeline completed with 100% success rate === ");
-              addLog("🎯 [Success] OLAP Star Schema successfully populated! Fast-performance metrics ready for analytics.");
-              onEtlComplete(true);
-            }, 600);
-          }, 800);
-        }, 800);
-      }, 900);
-    }, 800);
+    addLog("Connecting to SQL Server (database SalesDW)...");
+
+    let result: EtlResult;
+    try {
+      result = await api.runEtl();
+    } catch (err: any) {
+      addLog(`ERROR: ${err.message}`);
+      setStatus("idle");
+      setProgress(0);
+      return;
+    }
+
+    // The ETL already ran as one transaction on the server; replay its real steps so each phase is visible.
+    const icons = { extract: "[Extract]", transform: "[Transform]", load: "[Load]" } as const;
+    const phaseStatus = { extract: "extracting", transform: "transforming", load: "loading" } as const;
+    for (let i = 0; i < result.steps.length; i++) {
+      const step = result.steps[i];
+      await new Promise((resolve) => setTimeout(resolve, 250));
+      setStatus(phaseStatus[step.phase]);
+      setProgress(Math.round(((i + 1) / result.steps.length) * 95));
+      addLog(`${icons[step.phase]} ${step.message} (${step.ms} ms)`);
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, 250));
+    setProgress(100);
+    setStatus("completed");
+    addLog(`Done: ${result.rowsLoaded} fact rows loaded in ${result.durationMs} ms (one transaction, logged in dbo.etl_runs).`);
+    onEtlComplete(true);
   };
 
   return (
@@ -96,10 +70,10 @@ export default function EtlSimulator({ onEtlComplete, isEtlDone }: EtlSimulatorP
         <div>
           <h3 className="text-base sm:text-lg font-serif italic text-[#D4AF37] tracking-wider flex items-center gap-2">
             <Server className="text-[#D4AF37] w-5 h-5" />
-            PHP ETL Automation Pipeline (Simulation Interface)
+            ETL Pipeline (SQL Server)
           </h3>
           <p className="text-xs text-zinc-400 mt-1">
-            Simulate real-time Extract, Transform, and Load procedures shifting source production layers into analytics-ready fact schemas.
+            Runs a real Extract, Transform and Load in SQL Server: source tables (schema oltp) into the Star Schema (dim_* and fact_sales).
           </p>
         </div>
         <button
@@ -112,7 +86,7 @@ export default function EtlSimulator({ onEtlComplete, isEtlDone }: EtlSimulatorP
           }`}
         >
           <Play className="w-4 h-4 fill-current" />
-          Run PHP ETL Pipeline
+          Run ETL
         </button>
       </div>
 
@@ -123,8 +97,8 @@ export default function EtlSimulator({ onEtlComplete, isEtlDone }: EtlSimulatorP
           <div className="mx-auto w-10 h-10 bg-[#0F0F0F] border border-[#262626] text-[#D4AF37] rounded-none flex items-center justify-center">
             <Server className="w-5 h-5" />
           </div>
-          <div className="font-serif italic text-sm text-[#E0E0E0]">MySQL Staging (OLTP)</div>
-          <div className="text-[10px] text-zinc-500 font-mono">10 Staging Customers • 9 Products • 30 Transactions</div>
+          <div className="font-serif italic text-sm text-[#E0E0E0]">Source tables (oltp.*)</div>
+          <div className="text-[10px] text-zinc-500 font-mono">{dashboard ? `${dashboard.source_counts.customers} Customers • ${dashboard.source_counts.products} Products • ${dashboard.source_counts.items} Order lines` : "Loading..."}</div>
           <div className="pt-2">
             <span className="text-[9px] bg-[#0A0A0A] text-amber-500 px-2 py-0.5 rounded-none border border-amber-900/40 uppercase tracking-wider font-mono font-bold">
               Raw Staging Staged
@@ -180,9 +154,9 @@ export default function EtlSimulator({ onEtlComplete, isEtlDone }: EtlSimulatorP
           <div className="mx-auto w-10 h-10 bg-[#0F0F0F] border border-[#262626] text-[#D4AF37] rounded-none flex items-center justify-center">
             <Database className="w-5 h-5 animate-pulse" />
           </div>
-          <div className="font-serif italic text-sm text-[#E0E0E0]">MySQL OLAP (Data Warehouse)</div>
+          <div className="font-serif italic text-sm text-[#E0E0E0]">Star Schema (dbo.dim_* / fact_sales)</div>
           <div className="text-[10px] text-zinc-500 font-mono">
-            {isEtlDone ? "3 Dimensions • 30 Central Fact Rows" : "0 Dimensions • Empty Facts"}
+            {isEtlDone && dashboard?.lastEtl ? `3 Dimensions • ${dashboard.lastEtl.rowsLoaded} Fact Rows` : "0 Dimensions • Empty Facts"}
           </div>
           <div className="pt-2">
             <span className={`text-[9px] px-2 py-0.5 rounded-none border uppercase tracking-wider font-mono font-bold ${
@@ -194,14 +168,14 @@ export default function EtlSimulator({ onEtlComplete, isEtlDone }: EtlSimulatorP
         </div>
       </div>
 
-      {/* Simulated Console Logs outputs */}
+      {/* ETL step log returned by the server */}
       <div className="space-y-2">
         <div className="flex items-center justify-between text-xs font-bold text-zinc-400">
           <span className="flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-wider">
             <Activity className="w-4 h-4 text-[#D4AF37]" />
-            Live PHP Execution Logs (STDOUT CLI Response)
+            ETL Execution Log (SQL Server)
           </span>
-          <span className="font-mono text-[10px] text-zinc-600">CLI ENGINE SIMULATOR</span>
+          <span className="font-mono text-[10px] text-zinc-600">SQL SERVER • SalesDW</span>
         </div>
 
         <div
@@ -211,7 +185,7 @@ export default function EtlSimulator({ onEtlComplete, isEtlDone }: EtlSimulatorP
           {logs.length === 0 ? (
             <div className="text-zinc-650 flex flex-col items-center justify-center h-full space-y-1">
               <span className="text-[10px] tracking-widest uppercase text-zinc-600">-- SYSTEM QUIET --</span>
-              <span className="text-[10.5px]">Click "Run PHP ETL Pipeline" above to execute the server-side extraction & Star Schema loading.</span>
+              <span className="text-[10.5px]">Click "Run ETL" above to load the Star Schema from the source tables.</span>
             </div>
           ) : (
             logs.map((log, index) => {
