@@ -56,7 +56,12 @@ export const api = {
   sourceOptions: () => request<SourceOptions>("/api/source/options"),
   addOrder: (order: { customerId: number; orderDate: string; items: { productId: number; quantity: number }[] }) =>
     request<{ orderId: number; orderDate: string; total: number }>("/api/source/orders", order),
+  addCustomer: (customer: { name: string; email: string; city: string; age: number }) =>
+    request<{ id: number; name: string; city: string }>("/api/source/customers", customer),
+  addProduct: (product: { name: string; category: string; unitPrice: number; costPrice: number }) =>
+    request<{ id: number; name: string; category: string; unitPrice: number }>("/api/source/products", product),
   resetSource: () => request<{ success: boolean }>("/api/source/reset", {}),
+  clearSource: () => request<{ success: boolean }>("/api/source/clear", {}),
   query: (sql: string) => request<QueryResult>("/api/query", { sql }),
 };
 

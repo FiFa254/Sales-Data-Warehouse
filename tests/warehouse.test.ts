@@ -53,7 +53,7 @@ describe('source data', () => {
     assert.equal(await count('oltp.products'), 9);
     assert.equal(await count('oltp.orders'), 25);
     assert.equal(await count('oltp.order_items'), 30);
-    assert.equal(await wh.seed(), false);
+    assert.equal(await wh.loadDemoData(), false);
   });
 
   test('dashboard reads the source tables before the first ETL', async () => {
@@ -78,6 +78,33 @@ describe('source data', () => {
     await assert.rejects(wh.addOrder({ customerId: 1, items: [] }), QueryRejected);
     await assert.rejects(wh.addOrder({ customerId: 1, items: [{ productId: 101, quantity: 0 }] }), QueryRejected);
     assert.equal(await count('oltp.orders'), 26, 'failed orders leave nothing behind');
+  });
+
+  test('clear empties everything; new customers and products can be added from scratch', async () => {
+    await wh.runEtl();
+    await wh.clear();
+    for (const table of ['oltp.customers', 'oltp.products', 'oltp.orders', 'dbo.fact_sales', 'dbo.dim_customers', 'dbo.etl_runs']) {
+      assert.equal(await count(table), 0, table);
+    }
+    const empty = await wh.dashboard();
+    assert.equal(empty.metrics.revenue, 0);
+    assert.equal(empty.trend.length, 0);
+
+    const customer = await wh.addCustomer({ name: 'ลูกค้าใหม่', email: 'new@example.com', city: 'Bangkok', age: 30 });
+    const product = await wh.addProduct({ name: 'Desk Lamp', category: 'Home', unitPrice: 990, costPrice: 600 });
+    assert.equal(customer.id, 1);
+    assert.equal(product.id, 101);
+
+    await wh.addOrder({ customerId: customer.id, orderDate: '2026-09-01', items: [{ productId: product.id, quantity: 2 }] });
+    await wh.runEtl();
+    const d = await wh.dashboard();
+    assert.equal(d.metrics.revenue, 1980);
+    assert.equal(d.metrics.profit, 780);
+    assert.equal(d.tiers.find((t) => t.name === 'Standard')!.Customers, 1);
+
+    await assert.rejects(wh.addCustomer({ name: '', email: 'x@y.z', city: 'A', age: 20 }), QueryRejected);
+    await assert.rejects(wh.addCustomer({ name: 'A', email: 'not-an-email', city: 'A', age: 20 }), QueryRejected);
+    await assert.rejects(wh.addProduct({ name: 'A', category: 'B', unitPrice: -1, costPrice: 0 }), QueryRejected);
   });
 });
 

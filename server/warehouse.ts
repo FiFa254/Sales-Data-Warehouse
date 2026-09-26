@@ -153,8 +153,11 @@ export class Warehouse {
     return new Warehouse(db, connectionString);
   }
 
-  /** Inserts the demo source data when oltp.customers is empty. */
-  async seed(): Promise<boolean> {
+  /**
+   * Inserts the demo source data when oltp.customers is empty. Not called automatically unless
+   * SEED_DEMO_DATA=true; the "Load demo data" button calls reset().
+   */
+  async loadDemoData(): Promise<boolean> {
     const { n } = (await this.db.queryOne<{ n: number }>('SELECT COUNT(*) AS n FROM oltp.customers'))!;
     if (n > 0) return false;
 
@@ -179,15 +182,61 @@ export class Warehouse {
     return true;
   }
 
-  /** Clears the warehouse and restores the demo source data. */
-  async reset(): Promise<void> {
+  /** Deletes all source data, the star schema and the ETL log. */
+  async clear(): Promise<void> {
     await this.db.run(`
       DELETE FROM dbo.fact_sales; DELETE FROM dbo.dim_time; DELETE FROM dbo.dim_customers; DELETE FROM dbo.dim_products;
       DELETE FROM dbo.etl_runs;
       DELETE FROM oltp.order_items; DELETE FROM oltp.orders; DELETE FROM oltp.products; DELETE FROM oltp.customers;
       DBCC CHECKIDENT ('dbo.dim_customers', RESEED, 0) WITH NO_INFOMSGS;
       DBCC CHECKIDENT ('dbo.dim_products', RESEED, 0) WITH NO_INFOMSGS;`);
-    await this.seed();
+  }
+
+  /** Clears everything and loads the demo source data. */
+  async reset(): Promise<void> {
+    await this.clear();
+    await this.loadDemoData();
+  }
+
+  async addCustomer(input: { name?: string; email?: string; city?: string; age?: number }) {
+    const name = String(input.name ?? '').trim();
+    const email = String(input.email ?? '').trim();
+    const city = String(input.city ?? '').trim();
+    const age = Number(input.age);
+    if (!name || name.length > 100) throw new QueryRejected('Customer name is required (max 100 characters).');
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 200) throw new QueryRejected('Enter a valid e-mail address.');
+    if (!city || city.length > 100) throw new QueryRejected('City is required (max 100 characters).');
+    if (!Number.isInteger(age) || age < 1 || age > 120) throw new QueryRejected('Age must be a whole number from 1 to 120.');
+
+    return this.db.transaction(async (tx) => {
+      const [{ id }] = await tx.query<{ id: number }>(
+        'SELECT ISNULL(MAX(customer_id), 0) + 1 AS id FROM oltp.customers WITH (UPDLOCK, HOLDLOCK)'
+      );
+      await tx.run('INSERT INTO oltp.customers (customer_id, name, email, city, age, created_at) VALUES (?, ?, ?, ?, ?, CAST(GETDATE() AS DATE))',
+        [id, name, email, city, age]);
+      return { id, name, city };
+    });
+  }
+
+  async addProduct(input: { name?: string; category?: string; unitPrice?: number; costPrice?: number }) {
+    const name = String(input.name ?? '').trim();
+    const category = String(input.category ?? '').trim();
+    const unitPrice = Number(input.unitPrice);
+    const costPrice = Number(input.costPrice);
+    if (!name || name.length > 200) throw new QueryRejected('Product name is required (max 200 characters).');
+    if (!category || category.length > 100) throw new QueryRejected('Category is required (max 100 characters).');
+    if (!Number.isFinite(unitPrice) || unitPrice < 0 || !Number.isFinite(costPrice) || costPrice < 0) {
+      throw new QueryRejected('Prices must be numbers of 0 or more.');
+    }
+
+    return this.db.transaction(async (tx) => {
+      const [{ id }] = await tx.query<{ id: number }>(
+        'SELECT ISNULL(MAX(product_id), 100) + 1 AS id FROM oltp.products WITH (UPDLOCK, HOLDLOCK)'
+      );
+      await tx.run('INSERT INTO oltp.products (product_id, name, category, unit_price, cost_price) VALUES (?, ?, ?, ?, ?)',
+        [id, name, category, unitPrice, costPrice]);
+      return { id, name, category, unitPrice };
+    });
   }
 
   // ---------- Source (OLTP) ----------

@@ -47,8 +47,23 @@ app.post("/api/source/orders", handle(async (req, res) => {
   res.json(await warehouse.addOrder(req.body ?? {}));
 }));
 
+app.post("/api/source/customers", handle(async (req, res) => {
+  res.json(await warehouse.addCustomer(req.body ?? {}));
+}));
+
+app.post("/api/source/products", handle(async (req, res) => {
+  res.json(await warehouse.addProduct(req.body ?? {}));
+}));
+
+// Replaces all data with the demo data set.
 app.post("/api/source/reset", handle(async (req, res) => {
   await warehouse.reset();
+  res.json({ success: true });
+}));
+
+// Deletes all source data and the warehouse.
+app.post("/api/source/clear", handle(async (req, res) => {
+  await warehouse.clear();
   res.json({ success: true });
 }));
 
@@ -158,7 +173,8 @@ app.post("/api/chat", async (req, res) => {
 async function startServer() {
   try {
     warehouse = await Warehouse.open(CONNECTION_STRING);
-    console.log((await warehouse.seed()) ? "Database: created SalesDW with demo source data" : "Database: connected to SalesDW");
+    const demo = process.env.SEED_DEMO_DATA === "true" && (await warehouse.loadDemoData());
+    console.log(demo ? "Database: loaded demo source data (SEED_DEMO_DATA=true)" : "Database: connected to SalesDW");
   } catch (err: any) {
     console.error("Cannot connect to SQL Server. Check that the SQL Server service is running and MSSQL_CONNECTION_STRING in .env.");
     console.error(err?.message ?? err);
