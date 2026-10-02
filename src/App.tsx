@@ -50,8 +50,7 @@ const TABS: { id: TabId; label: string; icon: LucideIcon }[] = [
 ];
 
 const BANNER_TONES = {
-  warning: { box: "bg-amber-50 border-amber-200", icon: "bg-amber-100 text-amber-800", Icon: AlertCircle },
-  success: { box: "bg-emerald-50 border-emerald-200", icon: "bg-emerald-100 text-emerald-800", Icon: CheckCircle2 }
+  warning: { box: "bg-amber-50 border-amber-200", icon: "bg-amber-100 text-amber-800", Icon: AlertCircle }
 };
 
 function StatusBanner({
@@ -271,13 +270,15 @@ export default function App() {
           )}
 
           {isEtlDone && pendingOrders === 0 && (
-            <StatusBanner tone="success" title="Warehouse is up to date">
-              Reading the star schema in SQL Server
-              {dashboard?.lastEtl
-                ? ` · last ETL ${new Date(dashboard.lastEtl.finishedAt).toLocaleString()}, ${dashboard.lastEtl.rowsLoaded} fact rows in ${dashboard.lastEtl.durationMs} ms`
-                : ""}
-              .
-            </StatusBanner>
+            <p className="flex items-start gap-2 text-sm text-muted" role="status">
+              <CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0 text-emerald-700" aria-hidden="true" />
+              <span>
+                <span className="font-semibold text-ink">Warehouse is up to date</span>
+                {dashboard?.lastEtl
+                  ? ` · last ETL ${new Date(dashboard.lastEtl.finishedAt).toLocaleString()}, ${dashboard.lastEtl.rowsLoaded} fact rows`
+                  : ""}
+              </span>
+            </p>
           )}
 
           <div
@@ -458,11 +459,9 @@ export default function App() {
                       const percent = cat.sales > 0 ? (cat.Profit / cat.sales) * 100 : 0;
                       return (
                         <div key={cat.name} className="rounded-2xl bg-subtle p-4 flex flex-col gap-3">
-                          <div className="flex flex-wrap items-center justify-between gap-2">
-                            <span className="text-sm font-semibold text-ink">{cat.name}</span>
-                            <span className="rounded-full bg-accent-soft text-accent text-xs font-semibold px-2.5 py-0.5 tabular-nums shrink-0">
-                              {percent.toFixed(1)}% margin
-                            </span>
+                          <div>
+                            <p className="text-sm font-semibold text-ink">{cat.name}</p>
+                            <p className="text-xs text-muted tabular-nums">{percent.toFixed(1)}% margin</p>
                           </div>
                           <dl className="grid grid-cols-2 gap-2 text-sm">
                             <div>
