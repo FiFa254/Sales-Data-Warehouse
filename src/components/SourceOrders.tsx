@@ -99,20 +99,20 @@ export default function SourceOrders({ onChanged }: SourceOrdersProps) {
     });
   };
 
-  const field = "w-full bg-[#0A0A0A] border border-[#262626] text-zinc-200 text-xs px-3 py-2 rounded-none outline-none focus:border-[#D4AF37]/60";
-  const label = "space-y-1 text-[10px] uppercase tracking-wider text-zinc-500 font-mono";
-  const secondaryButton = "flex items-center gap-1.5 px-3 py-2 text-[10px] font-mono uppercase tracking-wider border border-[#262626] text-zinc-400 hover:text-zinc-200 hover:bg-[#0F0F0F] disabled:opacity-50 cursor-pointer shrink-0";
-  const primaryButton = "flex items-center justify-center gap-2 bg-[#D4AF37] hover:bg-amber-300 text-slate-950 text-[11px] font-bold px-4 py-2.5 rounded-none uppercase font-mono disabled:opacity-50 cursor-pointer";
+  const field = "w-full bg-subtle border border-line text-ink text-xs px-3 py-2 rounded-xl outline-none focus:border-accent/60";
+  const label = "space-y-1 text-[10px] uppercase tracking-wider text-muted font-mono";
+  const secondaryButton = "flex items-center gap-1.5 px-3 py-2 text-[10px] font-mono uppercase tracking-wider border border-line text-muted hover:text-ink hover:bg-subtle disabled:opacity-50 cursor-pointer shrink-0";
+  const primaryButton = "flex items-center justify-center gap-2 bg-accent hover:bg-accent-strong text-white text-[11px] font-bold px-4 py-2.5 rounded-xl uppercase font-mono disabled:opacity-50 cursor-pointer";
 
   return (
-    <div className="bg-[#141414] p-6 rounded-none border border-[#262626] space-y-6">
+    <div className="bg-surface p-6 rounded-xl border border-line space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
         <div>
-          <h3 className="text-base font-serif italic text-[#D4AF37] tracking-wider flex items-center gap-2">
+          <h3 className="text-base font-display font-semibold text-accent tracking-wider flex items-center gap-2">
             <ShoppingCart className="w-5 h-5" />
             Source System (schema oltp)
           </h3>
-          <p className="text-xs text-zinc-400 mt-1">
+          <p className="text-xs text-muted mt-1">
             Add customers, products and orders, then run the ETL above to see them on the dashboard.
           </p>
         </div>
@@ -129,7 +129,7 @@ export default function SourceOrders({ onChanged }: SourceOrdersProps) {
       </div>
 
       {options && !hasMasterData && (
-        <p className="text-[11px] text-amber-200 font-mono">
+        <p className="text-[11px] text-amber-800 font-mono">
           No {options.customers.length === 0 ? "customers" : "products"} yet. Add them below before recording an order.
         </p>
       )}
@@ -168,10 +168,10 @@ export default function SourceOrders({ onChanged }: SourceOrdersProps) {
         </button>
       </form>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 border-t border-[#262626] pt-5">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 border-t border-line pt-5">
         <form onSubmit={saveCustomer} className="space-y-3">
-          <h4 className="text-xs font-mono uppercase tracking-wider text-zinc-300 flex items-center gap-1.5">
-            <UserPlus className="w-4 h-4 text-[#D4AF37]" /> New customer
+          <h4 className="text-xs font-mono uppercase tracking-wider text-ink flex items-center gap-1.5">
+            <UserPlus className="w-4 h-4 text-accent" /> New customer
           </h4>
           <div className="grid grid-cols-2 gap-3">
             <label className={label}>Name<input className={field} value={customer.name} maxLength={100} required
@@ -189,8 +189,8 @@ export default function SourceOrders({ onChanged }: SourceOrdersProps) {
         </form>
 
         <form onSubmit={saveProduct} className="space-y-3">
-          <h4 className="text-xs font-mono uppercase tracking-wider text-zinc-300 flex items-center gap-1.5">
-            <PackagePlus className="w-4 h-4 text-[#D4AF37]" /> New product
+          <h4 className="text-xs font-mono uppercase tracking-wider text-ink flex items-center gap-1.5">
+            <PackagePlus className="w-4 h-4 text-accent" /> New product
           </h4>
           <div className="grid grid-cols-2 gap-3">
             <label className={label}>Name<input className={field} value={product.name} maxLength={200} required
@@ -209,7 +209,7 @@ export default function SourceOrders({ onChanged }: SourceOrdersProps) {
       </div>
 
       {message && (
-        <p className={`text-[11px] font-mono ${message.ok ? "text-emerald-400" : "text-red-400"}`} role="status">
+        <p className={`text-[11px] font-mono ${message.ok ? "text-emerald-700" : "text-red-700"}`} role="status">
           {message.text}
         </p>
       )}

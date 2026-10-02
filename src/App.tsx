@@ -5,15 +5,9 @@ import {
   Layers,
   Database,
   Terminal,
-  Activity,
   FileCode,
   AlertCircle,
-  TrendingDown,
-  Percent,
-  TrendingUp as TrendIcon,
-  Sparkles,
   Award,
-  Clock,
   BookOpen,
   ArrowRight
 } from "lucide-react";
@@ -70,33 +64,32 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0A0A0A] text-[#E0E0E0] flex flex-col font-sans transition-colors duration-350">
-      {/* Decorative luxury golds ambient glimmers (subtle and high-end) */}
-      <div className="absolute top-0 left-1/4 w-96 h-96 bg-[#D4AF37]/3 rounded-full blur-3xl pointer-events-none"></div>
-      <div className="absolute bottom-10 right-1/4 w-80 h-80 bg-zinc-500/3 rounded-full blur-3xl pointer-events-none"></div>
-
-      {/* Main Top Header Navigation Bar */}
-      <header className="border-b border-[#262626] bg-[#0F0F0F]/90 backdrop-blur-md sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-none bg-[#141414] border border-[#262626] flex items-center justify-center shadow-[0_0_15px_rgba(212,175,55,0.08)]">
-              <Database className="w-5 h-5 text-[#D4AF37] animate-pulse" />
+    <div className="min-h-screen bg-canvas text-ink flex flex-col font-sans">
+      <header className="sticky top-0 z-50 bg-canvas/85 backdrop-blur-md border-b border-line/70">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-10 h-10 rounded-2xl bg-accent text-white flex items-center justify-center shrink-0">
+              <Database className="w-5 h-5" />
             </div>
-            <div>
-              <h1 className="text-md sm:text-lg font-serif italic text-[#D4AF37] tracking-wider flex items-center gap-1.5">
+            <div className="min-w-0">
+              <h1 className="font-display text-lg font-bold tracking-tight text-ink truncate">
                 Aether Sales Warehouse
               </h1>
-              <p className="text-[10px] uppercase tracking-[0.2em] text-zinc-500 font-mono">
-                Intelligence Layer v4.2 • Star Schema & SQL Server ETL Pipeline
+              <p className="text-xs text-muted truncate">
+                Star schema and ETL pipeline on SQL Server
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] bg-[#141414] border border-[#262626] text-zinc-400 font-bold px-3 py-1.5 rounded-none flex items-center gap-1.5 font-mono">
-              <Clock className="w-3.5 h-3.5 text-[#D4AF37]" />
-              {loadError ? "SQL Server: OFFLINE" : dashboard ? "SQL Server: SalesDW CONNECTED" : "SQL Server: CONNECTING..."}
-            </span>
-          </div>
+          <span
+            role="status"
+            className="shrink-0 inline-flex items-center gap-2 rounded-full bg-surface border border-line px-3.5 py-1.5 text-xs font-medium text-ink"
+          >
+            <span
+              aria-hidden="true"
+              className={`w-2 h-2 rounded-full ${loadError ? "bg-red-500" : dashboard ? "bg-emerald-500" : "bg-amber-400"}`}
+            />
+            {loadError ? "SQL Server offline" : dashboard ? "SalesDW connected" : "Connecting…"}
+          </span>
         </div>
       </header>
 
@@ -106,26 +99,26 @@ export default function App() {
         <div className="lg:col-span-8 space-y-6 flex flex-col">
           
           {loadError && (
-            <div className="bg-[#141414] border border-red-900/50 p-5 rounded-none text-[11px] text-red-300 font-mono">
+            <div className="bg-surface border border-red-200 p-5 rounded-xl text-[11px] text-red-700 font-mono">
               Cannot load data from SQL Server: {loadError}
             </div>
           )}
 
           {/* Quick Notice Banner if ETL not run yet */}
           {dashboard && !isEtlDone && (
-            <div className="bg-[#141414] border border-amber-900/40 p-5 rounded-none flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-[0_0_20px_rgba(212,175,55,0.02)]">
+            <div className="bg-surface border border-amber-200 p-5 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div className="flex items-start gap-3">
-                <AlertCircle className="w-5 h-5 text-[#D4AF37] shrink-0 mt-0.5" />
+                <AlertCircle className="w-5 h-5 text-accent shrink-0 mt-0.5" />
                 <div>
-                  <h4 className="text-xs font-serif italic text-amber-200 uppercase tracking-wider">Warehouse Database Not Loaded (OLAP Data Empty)</h4>
-                  <p className="text-[11px] text-zinc-400 mt-1 leading-relaxed">
+                  <h4 className="text-xs font-display font-semibold text-amber-800 uppercase tracking-wider">Warehouse Database Not Loaded (OLAP Data Empty)</h4>
+                  <p className="text-[11px] text-muted mt-1 leading-relaxed">
                     The dashboard is reading the source tables (OLTP) directly. Open the "ETL Pipeline" tab and run the ETL to build the Star Schema in SQL Server.
                   </p>
                 </div>
               </div>
               <button
                 onClick={() => setActiveTab("etl")}
-                className="bg-[#D4AF37] hover:bg-amber-300 text-slate-950 text-[11px] font-bold px-4 py-2 rounded-none shrink-0 flex items-center gap-1.5 transition-all duration-150 cursor-pointer shadow-[0_0_15px_rgba(212,175,55,0.2)] font-mono uppercase"
+                className="bg-accent hover:bg-accent-strong text-white text-[11px] font-bold px-4 py-2 rounded-xl shrink-0 flex items-center gap-1.5 transition-all duration-150 cursor-pointer font-mono uppercase"
               >
                 Execute ETL Now
                 <ArrowRight className="w-3.5 h-3.5" />
@@ -134,13 +127,13 @@ export default function App() {
           )}
 
           {isEtlDone && pendingOrders > 0 && (
-            <div className="bg-[#141414] border border-amber-900/40 p-5 rounded-none flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <p className="text-[11px] text-zinc-300 leading-relaxed">
-                <span className="text-amber-200 font-bold">{pendingOrders} new source order{pendingOrders > 1 ? "s" : ""}</span> not in the warehouse yet. Run the ETL again to load them.
+            <div className="bg-surface border border-amber-200 p-5 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <p className="text-[11px] text-ink leading-relaxed">
+                <span className="text-amber-800 font-bold">{pendingOrders} new source order{pendingOrders > 1 ? "s" : ""}</span> not in the warehouse yet. Run the ETL again to load them.
               </p>
               <button
                 onClick={() => setActiveTab("etl")}
-                className="bg-[#D4AF37] hover:bg-amber-300 text-slate-950 text-[11px] font-bold px-4 py-2 rounded-none shrink-0 flex items-center gap-1.5 cursor-pointer font-mono uppercase"
+                className="bg-accent hover:bg-accent-strong text-white text-[11px] font-bold px-4 py-2 rounded-xl shrink-0 flex items-center gap-1.5 cursor-pointer font-mono uppercase"
               >
                 Run ETL
                 <ArrowRight className="w-3.5 h-3.5" />
@@ -149,13 +142,13 @@ export default function App() {
           )}
 
           {isEtlDone && pendingOrders === 0 && (
-            <div className="bg-[#141414] border border-emerald-900/40 p-5 rounded-none flex items-center gap-4 shadow-[0_0_25px_rgba(16,185,129,0.03)]">
-              <div className="w-10 h-10 rounded-none bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0">
-                <Award className="w-5 h-5 text-[#D4AF37]" />
+            <div className="bg-surface border border-emerald-200 p-5 rounded-xl flex items-center gap-4">
+              <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-700 shrink-0">
+                <Award className="w-5 h-5 text-accent" />
               </div>
               <div>
-                <h4 className="text-xs font-serif italic text-[#D4AF37] uppercase tracking-wider">Warehouse & ETL Scripts Ready!</h4>
-                <p className="text-[11px] text-zinc-400 mt-0.5 leading-relaxed">
+                <h4 className="text-xs font-display font-semibold text-accent uppercase tracking-wider">Warehouse & ETL Scripts Ready!</h4>
+                <p className="text-[11px] text-muted mt-0.5 leading-relaxed">
                   The dashboard is reading the Star Schema in SQL Server{dashboard?.lastEtl ? ` (last ETL: ${new Date(dashboard.lastEtl.finishedAt).toLocaleString()}, ${dashboard.lastEtl.rowsLoaded} fact rows in ${dashboard.lastEtl.durationMs} ms)` : ""}. Run live queries in the SQL Playground.
                 </p>
               </div>
@@ -163,7 +156,7 @@ export default function App() {
           )}
 
           {/* Tab Navigation buttons */}
-          <div className="flex flex-wrap gap-1.5 border-b border-[#262626] pb-2">
+          <div className="flex flex-wrap gap-1.5 border-b border-line pb-2">
             {[
               { id: "dashboard", label: "📊 Overview Dashboard", icon: TrendingUp },
               { id: "etl", label: "🔄 ETL Pipeline", icon: Server },
@@ -174,10 +167,10 @@ export default function App() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
-                className={`flex items-center gap-2.5 px-4 py-3 rounded-none text-xs font-medium transition-all duration-150 border cursor-pointer ${
+                className={`flex items-center gap-2.5 px-4 py-3 rounded-xl text-xs font-medium transition-all duration-150 border cursor-pointer ${
                   activeTab === tab.id
-                    ? "bg-[#141414] border-l-2 border-[#D4AF37] text-[#D4AF37] shadow-[0_0_15px_rgba(212,175,55,0.05)] border-t-[#262626] border-r-[#262626] border-b-[#262626]"
-                    : "bg-[#0F0F0F] hover:bg-[#141414] border-[#262626] text-zinc-400 hover:text-zinc-200"
+                    ? "bg-surface border-l-2 border-accent text-accent border-t-line border-r-line border-b-line"
+                    : "bg-subtle hover:bg-surface border-line text-muted hover:text-ink"
                 }`}
               >
                 <tab.icon className="w-3.5 h-3.5" />
@@ -198,38 +191,38 @@ export default function App() {
                       label: "Total Revenue",
                       value: money(metrics.revenue),
                       desc: isEtlDone ? "fact_sales (star schema)" : "oltp tables (source)",
-                      color: "text-[#D4AF37]"
+                      color: "text-accent"
                     },
                     {
                       label: "Net Profit",
                       value: money(metrics.profit),
                       desc: `Cost ${money(metrics.cost)}`,
-                      color: "text-[#D4AF37]"
+                      color: "text-accent"
                     },
                     {
                       label: "Sales Transactions",
                       value: `${metrics.orders} Orders`,
                       desc: `${metrics.items} items • AOV ${money(metrics.aov)}`,
-                      color: "text-[#E0E0E0]"
+                      color: "text-ink"
                     },
                     {
                       label: "Profit Margin",
                       value: `${metrics.margin.toFixed(2)}%`,
                       desc: "profit / revenue",
-                      color: "text-zinc-400"
+                      color: "text-muted"
                     }
                   ].map((kpi, idx) => (
-                    <div key={idx} className="bg-[#141414] p-5 rounded-none border border-[#262626] space-y-2 relative overflow-hidden group">
-                      <div className="text-[10px] uppercase tracking-widest text-zinc-500">{kpi.label}</div>
-                      <div className={`text-xl sm:text-2xl font-serif italic ${idx === 0 || idx === 1 ? 'text-[#D4AF37]' : 'text-[#E0E0E0]'}`}>
+                    <div key={idx} className="bg-surface p-5 rounded-xl border border-line space-y-2 relative overflow-hidden group">
+                      <div className="text-[10px] uppercase tracking-widest text-muted">{kpi.label}</div>
+                      <div className={`text-xl sm:text-2xl font-display font-semibold ${idx === 0 || idx === 1 ? 'text-accent' : 'text-ink'}`}>
                         {kpi.value}
                       </div>
-                      <div className="flex items-center gap-1.5 text-[9.5px] text-zinc-650 font-mono">
-                        <span className={`${isEtlDone ? "text-emerald-500" : "text-amber-500"} font-bold`}>
+                      <div className="flex items-center gap-1.5 text-[9.5px] text-faint font-mono">
+                        <span className={`${isEtlDone ? "text-emerald-700" : "text-amber-700"} font-bold`}>
                           {kpi.desc}
                         </span>
                       </div>
-                      <div className="absolute right-0 bottom-0 top-0 w-[2px] bg-[#262626] group-hover:bg-[#D4AF37]/40 transition-colors"></div>
+                      <div className="absolute right-0 bottom-0 top-0 w-[2px] bg-line group-hover:bg-accent/40 transition-colors"></div>
                     </div>
                   ))}
                 </div>
@@ -238,13 +231,13 @@ export default function App() {
                 <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
                   
                   {/* Revenue vs Profit Time Series Monthly Trends */}
-                  <div className="md:col-span-12 lg:col-span-7 bg-[#141414] p-6 rounded-none border border-[#262626] flex flex-col justify-between">
+                  <div className="md:col-span-12 lg:col-span-7 bg-surface p-6 rounded-xl border border-line flex flex-col justify-between">
                     <div>
-                      <h4 className="text-xs uppercase font-serif italic tracking-wider text-[#D4AF37] flex items-center gap-1.5">
-                        <TrendingUp className="w-4 h-4 text-[#D4AF37]" />
+                      <h4 className="text-xs uppercase font-display font-semibold tracking-wider text-accent flex items-center gap-1.5">
+                        <TrendingUp className="w-4 h-4 text-accent" />
                         Monthly Sales and Profit Trends
                       </h4>
-                      <p className="text-[10.5px] text-zinc-500 mt-1 leading-relaxed">
+                      <p className="text-[10.5px] text-muted mt-1 leading-relaxed">
                         {isEtlDone ? "From fact_sales joined to dim_time in the Star Schema" : "From the source order tables (run the ETL to use the Star Schema)"}
                       </p>
                     </div>
@@ -275,13 +268,13 @@ export default function App() {
                   </div>
 
                   {/* Loyalty Grouping - Customers Tiers Value Metrics */}
-                  <div className="md:col-span-12 lg:col-span-5 bg-[#141414] p-6 rounded-none border border-[#262626] flex flex-col justify-between">
+                  <div className="md:col-span-12 lg:col-span-5 bg-surface p-6 rounded-xl border border-line flex flex-col justify-between">
                     <div>
-                      <h4 className="text-xs uppercase font-serif italic tracking-wider text-[#D4AF37] flex items-center gap-1.5">
-                        <Award className="w-4 h-4 text-[#D4AF37]" />
+                      <h4 className="text-xs uppercase font-display font-semibold tracking-wider text-accent flex items-center gap-1.5">
+                        <Award className="w-4 h-4 text-accent" />
                         Customer Loyalty Tiers (AOV Profile)
                       </h4>
-                      <p className="text-[10.5px] text-zinc-500 mt-1">
+                      <p className="text-[10.5px] text-muted mt-1">
                         {isEtlDone ? "Lifetime spend per tier from dim_customers (tiers computed by the ETL)" : "Tiers are computed by the ETL - run it to fill this chart"}
                       </p>
                     </div>
@@ -301,13 +294,13 @@ export default function App() {
                 </div>
 
                 {/* 3. Category performance list */}
-                <div className="bg-[#141414] p-6 rounded-none border border-[#262626] space-y-4">
+                <div className="bg-surface p-6 rounded-xl border border-line space-y-4">
                   <div>
-                    <h4 className="text-xs uppercase font-serif italic tracking-wider text-[#D4AF37] flex items-center gap-1.5">
-                      <Layers className="w-4 h-4 text-[#D4AF37]" />
+                    <h4 className="text-xs uppercase font-display font-semibold tracking-wider text-accent flex items-center gap-1.5">
+                      <Layers className="w-4 h-4 text-accent" />
                       Product Category Performance
                     </h4>
-                    <p className="text-[10.5px] text-zinc-500 mt-0.5">
+                    <p className="text-[10.5px] text-muted mt-0.5">
                       Deep dive into revenues and profit margins using dimensional slices from the Product Dimension table
                     </p>
                   </div>
@@ -316,29 +309,29 @@ export default function App() {
                     {categoryPerformance.map((cat, idx) => {
                       const percent = cat.sales > 0 ? ((cat.Profit / cat.sales) * 100).toFixed(1) : "0";
                       return (
-                        <div key={idx} className="bg-[#0F0F0F] p-4 rounded-none border border-[#262626] space-y-3">
-                          <div className="flex items-center justify-between text-xs font-bold text-zinc-250">
+                        <div key={idx} className="bg-subtle p-4 rounded-xl border border-line space-y-3">
+                          <div className="flex items-center justify-between text-xs font-bold text-ink">
                             <span>{cat.name}</span>
-                            <span className="text-[10px] text-[#D4AF37] px-1.5 py-0.2 bg-[#141414] border border-[#262626] rounded-none font-mono">
+                            <span className="text-[10px] text-accent px-1.5 py-0.2 bg-surface border border-line rounded-xl font-mono">
                               {percent}% margin
                             </span>
                           </div>
                           
                           <div className="space-y-1.5">
-                            <div className="flex justify-between text-[11px] text-zinc-500 font-mono">
+                            <div className="flex justify-between text-[11px] text-muted font-mono">
                               <span>Revenues:</span>
-                              <span className="font-bold text-zinc-300">{money(cat.sales)}</span>
+                              <span className="font-bold text-ink">{money(cat.sales)}</span>
                             </div>
-                            <div className="flex justify-between text-[11px] text-zinc-500 font-mono">
+                            <div className="flex justify-between text-[11px] text-muted font-mono">
                               <span>Net Profit:</span>
-                              <span className="font-bold text-[#D4AF37]">{money(cat.Profit)}</span>
+                              <span className="font-bold text-accent">{money(cat.Profit)}</span>
                             </div>
                           </div>
 
                           <div className="space-y-1 mt-2">
-                            <div className="w-full bg-[#1A1A1A] h-1.5">
+                            <div className="w-full bg-line h-1.5">
                               <div 
-                                className="bg-[#D4AF37] h-full transition-all duration-500" 
+                                className="bg-accent h-full transition-all duration-500" 
                                 style={{ width: `${percent}%` }}
                               ></div>
                             </div>
@@ -350,29 +343,29 @@ export default function App() {
                 </div>
 
                 {/* 4. Lesson Introduction Block */}
-                <div className="bg-[#141414] p-6 rounded-none border border-[#262626] space-y-3.5">
-                  <h4 className="text-xs uppercase font-serif italic tracking-wider text-[#D4AF37] flex items-center gap-1.5">
-                    <BookOpen className="w-4 h-4 text-[#D4AF37]" />
+                <div className="bg-surface p-6 rounded-xl border border-line space-y-3.5">
+                  <h4 className="text-xs uppercase font-display font-semibold tracking-wider text-accent flex items-center gap-1.5">
+                    <BookOpen className="w-4 h-4 text-accent" />
                     Data Warehouse Architecture & Design Principles
                   </h4>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs leading-relaxed text-zinc-400">
-                    <div className="bg-[#0F0F0F] p-4 rounded-none border border-[#262626] space-y-1.5">
-                      <span className="text-[#D4AF37] font-serif italic font-bold">1. Why Star Schema?</span>
-                      <p className="text-[11px] text-zinc-500">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs leading-relaxed text-muted">
+                    <div className="bg-subtle p-4 rounded-xl border border-line space-y-1.5">
+                      <span className="text-accent font-display font-semibold font-bold">1. Why Star Schema?</span>
+                      <p className="text-[11px] text-muted">
                         By normalizing data into simpler dimensions surrounding a central fact table, analytics queries require far fewer multi-table JOINs, slashing database processing loads by up to 80%.
                       </p>
                     </div>
 
-                    <div className="bg-[#0F0F0F] p-4 rounded-none border border-[#262626] space-y-1.5">
-                      <span className="text-[#D4AF37] font-serif italic font-bold">2. PHP ETL Pipeline</span>
-                      <p className="text-[11px] text-zinc-500">
+                    <div className="bg-subtle p-4 rounded-xl border border-line space-y-1.5">
+                      <span className="text-accent font-display font-semibold font-bold">2. PHP ETL Pipeline</span>
+                      <p className="text-[11px] text-muted">
                         The custom script extracts raw transactions from the staging database, maps customer loyalty rankings dynamically using aggregated RFM attributes, and loads cleanly into central fact tables.
                       </p>
                     </div>
 
-                    <div className="bg-[#0F0F0F] p-4 rounded-none border border-[#262626] space-y-1.5">
-                      <span className="text-[#D4AF37] font-serif italic font-bold">3. Database Indexes</span>
-                      <p className="text-[11px] text-zinc-500">
+                    <div className="bg-subtle p-4 rounded-xl border border-line space-y-1.5">
+                      <span className="text-accent font-display font-semibold font-bold">3. Database Indexes</span>
+                      <p className="text-[11px] text-muted">
                         B-Tree indexing is systematically configured on dimension relationships. This guarantees sub-millisecond query responses even as transactional ledger indexes scale to millions of orders.
                       </p>
                     </div>
@@ -410,9 +403,11 @@ export default function App() {
       </main>
 
       {/* Aesthetic Footer */}
-      <footer className="border-t border-[#262626] bg-[#0F0F0F] py-8 mt-12 text-center text-[10px] tracking-widest text-zinc-600 font-mono flex flex-col items-center justify-center gap-2">
-        <span>© 2026 AETHER SYSTEMS. ALL RIGHTS RESERVED.</span>
-        <span className="opacity-50">ENGINE: NODE.JS + EXPRESS API • SQL SERVER (SalesDW)</span>
+      <footer className="mt-12 border-t border-line/70">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-faint">
+          <span>© 2026 Aether Systems</span>
+          <span>Node.js + Express API · SQL Server (SalesDW)</span>
+        </div>
       </footer>
     </div>
   );

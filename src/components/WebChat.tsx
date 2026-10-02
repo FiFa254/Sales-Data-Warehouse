@@ -99,7 +99,7 @@ export default function WebChat() {
         const parts = line.split("**");
         formattedLine = parts.map((part, pIdx) => {
           if (pIdx % 2 === 1) {
-            return <strong key={pIdx} className="text-[#D4AF37] font-serif italic font-bold">{part}</strong>;
+            return <strong key={pIdx} className="text-accent font-display font-semibold font-bold">{part}</strong>;
           }
           return part;
         });
@@ -109,8 +109,8 @@ export default function WebChat() {
       if (line.trim().startsWith("-") || line.trim().startsWith("* ")) {
         const listText = line.trim().substring(1).trim();
         return (
-          <div key={idx} className="flex items-start gap-1 pb-1 pl-2 text-xs leading-relaxed text-zinc-300">
-            <span className="text-[#D4AF37] font-bold shrink-0">•</span>
+          <div key={idx} className="flex items-start gap-1 pb-1 pl-2 text-xs leading-relaxed text-ink">
+            <span className="text-accent font-bold shrink-0">•</span>
             <span>{formattedLine}</span>
           </div>
         );
@@ -119,14 +119,14 @@ export default function WebChat() {
       // Table query code highlighting or inline tags
       if (line.trim().startsWith("SELECT") || line.trim().startsWith("INSERT") || line.trim().startsWith("CREATE TABLE")) {
         return (
-          <pre key={idx} className="bg-[#0A0A0A] p-3 rounded-none border border-[#262626] font-mono text-[10px] text-amber-500 overflow-x-auto my-1 whitespace-pre leading-relaxed">
+          <pre key={idx} className="bg-subtle p-3 rounded-xl border border-line font-mono text-[10px] text-amber-700 overflow-x-auto my-1 whitespace-pre leading-relaxed">
             {line}
           </pre>
         );
       }
 
       return (
-        <p key={idx} className="pb-1 text-xs text-zinc-300 leading-relaxed font-sans">
+        <p key={idx} className="pb-1 text-xs text-ink leading-relaxed font-sans">
           {formattedLine}
         </p>
       );
@@ -134,19 +134,19 @@ export default function WebChat() {
   };
 
   return (
-    <div className="bg-[#141414] p-5 rounded-none border border-[#262626] flex flex-col h-[520px]">
+    <div className="bg-surface p-5 rounded-xl border border-line flex flex-col h-[520px]">
       {/* Box Header */}
-      <div className="border-b border-[#262626] pb-3 mb-4 flex items-center justify-between">
+      <div className="border-b border-line pb-3 mb-4 flex items-center justify-between">
         <div>
-          <h3 className="text-xs font-mono font-bold text-zinc-300 flex items-center gap-1.5 uppercase tracking-[0.08em]">
-            <Sparkles className="text-[#D4AF37] w-4 h-4 animate-bounce" />
+          <h3 className="text-xs font-mono font-bold text-ink flex items-center gap-1.5 uppercase tracking-[0.08em]">
+            <Sparkles className="text-accent w-4 h-4 animate-bounce" />
             AI Warehouse Assistant (Gemini Co-Pilot)
           </h3>
-          <p className="text-[11px] text-zinc-500 mt-0.5">
+          <p className="text-[11px] text-muted mt-0.5">
             Optimize PHP-MySQL scripts, debug PDO connection blocks, or understand analytics modelling.
           </p>
         </div>
-        <span className="text-[9px] bg-[#0A0A0A] text-[#D4AF37] border border-[#262626] px-2 py-0.5 rounded-none font-mono font-bold uppercase tracking-wider">
+        <span className="text-[9px] bg-subtle text-accent border border-line px-2 py-0.5 rounded-xl font-mono font-bold uppercase tracking-wider">
           {offline ? "Offline Answers" : "Online Assistant"}
         </span>
       </div>
@@ -159,24 +159,24 @@ export default function WebChat() {
         {messages.map((m, idx) => (
           <div key={idx} className={`flex items-start gap-2.5 ${m.role === "user" ? "flex-row-reverse" : ""}`}>
             {/* Avatar block */}
-            <div className={`w-8 h-8 rounded-none flex items-center justify-center shrink-0 border ${
+            <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 border ${
               m.role === "user" 
-                ? "bg-[#141414] border-[#262626] text-zinc-300" 
-                : "bg-[#0A0A0A] border-[#262626] text-[#D4AF37]"
+                ? "bg-surface border-line text-ink" 
+                : "bg-subtle border-line text-accent"
             }`}>
               {m.role === "user" ? <User className="w-4 h-4" /> : <Sparkles className="w-4 h-4" />}
             </div>
 
             {/* Bubble */}
-            <div className={`max-w-[85%] rounded-none p-3.5 ${
+            <div className={`max-w-[85%] rounded-xl p-3.5 ${
               m.role === "user"
-                ? "bg-[#1C1C1C] text-zinc-100 border border-[#333333]"
-                : "bg-[#0A0A0A] text-zinc-300 border border-[#262626] font-sans"
+                ? "bg-line text-ink border border-line-strong"
+                : "bg-subtle text-ink border border-line font-sans"
             }`}>
               <div className="space-y-1">
                 {renderMessageContent(m.content)}
               </div>
-              <div className={`text-[9px] mt-2 font-mono text-zinc-600 ${m.role === "user" ? "text-right" : ""}`}>
+              <div className={`text-[9px] mt-2 font-mono text-faint ${m.role === "user" ? "text-right" : ""}`}>
                 {m.timestamp}
               </div>
             </div>
@@ -185,18 +185,18 @@ export default function WebChat() {
 
         {isLoading && (
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-none bg-[#0A0A0A] border border-[#262626] text-[#D4AF37] flex items-center justify-center shrink-0 animate-spin">
+            <div className="w-8 h-8 rounded-xl bg-subtle border border-line text-accent flex items-center justify-center shrink-0 animate-spin">
               <RefreshCw className="w-4 h-4" />
             </div>
-            <div className="bg-[#0A0A0A] p-3 rounded-none text-[11px] text-zinc-400 border border-[#262626]">
+            <div className="bg-subtle p-3 rounded-xl text-[11px] text-muted border border-line">
               Consulting data schemas and building engineering response...
             </div>
           </div>
         )}
 
         {errorText && (
-          <div className="bg-red-950/20 border border-red-950 p-3.5 rounded-none flex items-start gap-2 text-xs text-red-300 leading-relaxed font-mono">
-            <AlertCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
+          <div className="bg-red-50 border border-red-200 p-3.5 rounded-xl flex items-start gap-2 text-xs text-red-700 leading-relaxed font-mono">
+            <AlertCircle className="w-4 h-4 text-red-700 shrink-0 mt-0.5" />
             <span>{errorText}</span>
           </div>
         )}
@@ -210,16 +210,16 @@ export default function WebChat() {
           onChange={(e) => setUserInput(e.target.value)}
           placeholder="Ask about database connections, Star Schema modeling, or PHP ETL loops..."
           disabled={isLoading}
-          className="flex-1 bg-[#0A0A0A] text-zinc-100 border border-[#262626] rounded-none px-4 py-3 text-xs focus:outline-none focus:border-[#D4AF37] transition-colors placeholder:text-zinc-650"
+          className="flex-1 bg-subtle text-ink border border-line rounded-xl px-4 py-3 text-xs focus:outline-none focus:border-accent transition-colors placeholder:text-faint"
         />
         <button
           id="btn-send-chat"
           type="submit"
           disabled={isLoading || !userInput.trim()}
-          className={`p-3 rounded-none flex items-center justify-center transition-all duration-150 cursor-pointer ${
+          className={`p-3 rounded-xl flex items-center justify-center transition-all duration-150 cursor-pointer ${
             isLoading || !userInput.trim()
-              ? "bg-[#141414] text-zinc-650 border border-[#262626] cursor-not-allowed"
-              : "bg-[#D4AF37] hover:bg-[#F5D061] text-[#0A0A0A] hover:scale-102"
+              ? "bg-surface text-faint border border-line cursor-not-allowed"
+              : "bg-accent hover:bg-accent-strong text-white hover:scale-102"
           }`}
         >
           <Send className="w-4 h-4" />
