@@ -500,7 +500,7 @@ export function validateSelect(text: string): string {
   if (!/^(select|with)\b/i.test(withoutComments)) {
     throw new QueryRejected('The playground is read-only: start the query with SELECT or WITH.');
   }
-  if (/\b(insert|update|delete|merge|drop|alter|create|truncate|exec|execute|grant|revoke|deny|backup|restore|shutdown|kill|dbcc|waitfor|openrowset|opendatasource|openquery|revert|use)\b/i.test(withoutComments)
+  if (/\b(insert|update|delete|merge|drop|alter|create|truncate|exec|execute|grant|revoke|deny|backup|restore|shutdown|kill|dbcc|waitfor|openrowset|opendatasource|openquery|revert|use|set)\b/i.test(withoutComments)
       || /\binto\b/i.test(withoutComments)) {
     throw new QueryRejected('The playground is read-only: only SELECT queries are allowed.');
   }
