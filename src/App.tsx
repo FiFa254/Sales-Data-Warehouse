@@ -11,6 +11,9 @@ import {
   Award,
   BookOpen,
   ArrowRight,
+  DollarSign,
+  ShoppingBag,
+  PieChart,
   type LucideIcon
 } from "lucide-react";
 import {
@@ -243,46 +246,64 @@ export default function App() {
               <div className="space-y-6">
                 
                 {/* 1. Key Performance Indicators Blocks */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 2xl:grid-cols-4 gap-4">
                   {[
                     {
-                      label: "Total Revenue",
+                      label: "Total revenue",
                       value: money(metrics.revenue),
-                      desc: isEtlDone ? "fact_sales (star schema)" : "oltp tables (source)",
-                      color: "text-accent"
+                      desc: isEtlDone ? "fact_sales · star schema" : "oltp · source tables",
+                      icon: DollarSign
                     },
                     {
-                      label: "Net Profit",
+                      label: "Net profit",
                       value: money(metrics.profit),
                       desc: `Cost ${money(metrics.cost)}`,
-                      color: "text-accent"
+                      icon: TrendingUp
                     },
                     {
-                      label: "Sales Transactions",
-                      value: `${metrics.orders} Orders`,
-                      desc: `${metrics.items} items • AOV ${money(metrics.aov)}`,
-                      color: "text-ink"
+                      label: "Orders",
+                      value: String(metrics.orders),
+                      desc: `${metrics.items} items · AOV ${money(metrics.aov)}`,
+                      icon: ShoppingBag
                     },
                     {
-                      label: "Profit Margin",
+                      label: "Profit margin",
                       value: `${metrics.margin.toFixed(2)}%`,
-                      desc: "profit / revenue",
-                      color: "text-muted"
+                      desc: "Profit ÷ revenue",
+                      icon: PieChart
                     }
-                  ].map((kpi, idx) => (
-                    <div key={idx} className="bg-surface p-5 rounded-xl border border-line space-y-2 relative overflow-hidden group">
-                      <div className="text-[10px] uppercase tracking-widest text-muted">{kpi.label}</div>
-                      <div className={`text-xl sm:text-2xl font-display font-semibold ${idx === 0 || idx === 1 ? 'text-accent' : 'text-ink'}`}>
-                        {kpi.value}
-                      </div>
-                      <div className="flex items-center gap-1.5 text-[9.5px] text-faint font-mono">
-                        <span className={`${isEtlDone ? "text-emerald-700" : "text-amber-700"} font-bold`}>
+                  ].map((kpi, idx) => {
+                    const featured = idx === 0;
+                    return (
+                      <div
+                        key={kpi.label}
+                        className={`rounded-[var(--radius-card)] p-5 flex flex-col gap-4 ${
+                          featured ? "bg-accent text-white" : "bg-surface text-ink shadow-[var(--shadow-card)]"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <span className={`text-sm font-medium ${featured ? "text-white/85" : "text-muted"}`}>{kpi.label}</span>
+                          <span
+                            className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                              featured ? "bg-white/15 text-white" : "bg-accent-soft text-accent"
+                            }`}
+                          >
+                            <kpi.icon className="w-4 h-4" aria-hidden="true" />
+                          </span>
+                        </div>
+                        <div className="font-display text-3xl font-bold tracking-tight tabular-nums">
+                          {kpi.value}
+                        </div>
+                        <span
+                          className={`self-start rounded-full px-2.5 py-1 text-xs font-medium truncate max-w-full ${
+                            featured ? "bg-white/15 text-white" : "bg-subtle text-muted"
+                          }`}
+                        >
                           {kpi.desc}
                         </span>
                       </div>
-                      <div className="absolute right-0 bottom-0 top-0 w-[2px] bg-line group-hover:bg-accent/40 transition-colors"></div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
 
                 {/* 2. Analytical Graphs sections */}
