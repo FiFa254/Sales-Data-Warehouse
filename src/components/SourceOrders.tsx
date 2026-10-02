@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { Database, PlusCircle, ShoppingCart, Trash2, UserPlus, PackagePlus } from "lucide-react";
+import { ChevronRight, Database, PlusCircle, ShoppingCart, Trash2, UserPlus, PackagePlus } from "lucide-react";
 import { api, money, SourceOptions } from "../api";
 
 interface SourceOrdersProps {
@@ -171,45 +171,51 @@ export default function SourceOrders({ onChanged }: SourceOrdersProps) {
         </button>
       </form>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 border-t border-line pt-5">
-        <form onSubmit={saveCustomer} className="space-y-3">
-          <h3 className="text-sm font-semibold text-ink flex items-center gap-2">
-            <UserPlus className="w-4 h-4 text-accent" aria-hidden="true" /> New customer
-          </h3>
-          <div className="grid grid-cols-2 gap-3">
-            <label className={label}>Name<input className={field} value={customer.name} maxLength={100} required
-              onChange={(e) => setCustomer({ ...customer, name: e.target.value })} /></label>
-            <label className={label}>E-mail<input className={field} type="email" value={customer.email} maxLength={200} required
-              onChange={(e) => setCustomer({ ...customer, email: e.target.value })} /></label>
-            <label className={label}>City<input className={field} value={customer.city} maxLength={100} required
-              onChange={(e) => setCustomer({ ...customer, city: e.target.value })} /></label>
-            <label className={label}>Age<input className={field} type="number" min={1} max={120} value={customer.age} required
-              onChange={(e) => setCustomer({ ...customer, age: Number(e.target.value) })} /></label>
-          </div>
-          <button type="submit" disabled={busy} className={secondaryButton}>
-            <PlusCircle className="w-3.5 h-3.5" /> Add customer
-          </button>
-        </form>
+      <details className="group border-t border-line pt-4">
+        <summary className="flex items-center gap-2 text-sm font-semibold text-accent cursor-pointer list-none [&::-webkit-details-marker]:hidden">
+          <ChevronRight className="w-4 h-4 transition-transform group-open:rotate-90" aria-hidden="true" />
+          Add a new customer or product
+        </summary>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pt-5">
+          <form onSubmit={saveCustomer} className="space-y-3">
+            <h3 className="text-sm font-semibold text-ink flex items-center gap-2">
+              <UserPlus className="w-4 h-4 text-accent" aria-hidden="true" /> New customer
+            </h3>
+            <div className="grid grid-cols-2 gap-3">
+              <label className={label}>Name<input className={field} value={customer.name} maxLength={100} required
+                onChange={(e) => setCustomer({ ...customer, name: e.target.value })} /></label>
+              <label className={label}>E-mail<input className={field} type="email" value={customer.email} maxLength={200} required
+                onChange={(e) => setCustomer({ ...customer, email: e.target.value })} /></label>
+              <label className={label}>City<input className={field} value={customer.city} maxLength={100} required
+                onChange={(e) => setCustomer({ ...customer, city: e.target.value })} /></label>
+              <label className={label}>Age<input className={field} type="number" min={1} max={120} value={customer.age} required
+                onChange={(e) => setCustomer({ ...customer, age: Number(e.target.value) })} /></label>
+            </div>
+            <button type="submit" disabled={busy} className={secondaryButton}>
+              <PlusCircle className="w-3.5 h-3.5" /> Add customer
+            </button>
+          </form>
 
-        <form onSubmit={saveProduct} className="space-y-3">
-          <h3 className="text-sm font-semibold text-ink flex items-center gap-2">
-            <PackagePlus className="w-4 h-4 text-accent" aria-hidden="true" /> New product
-          </h3>
-          <div className="grid grid-cols-2 gap-3">
-            <label className={label}>Name<input className={field} value={product.name} maxLength={200} required
-              onChange={(e) => setProduct({ ...product, name: e.target.value })} /></label>
-            <label className={label}>Category<input className={field} value={product.category} maxLength={100} required
-              onChange={(e) => setProduct({ ...product, category: e.target.value })} /></label>
-            <label className={label}>Unit price<input className={field} type="number" min={0} step="0.01" value={product.unitPrice} required
-              onChange={(e) => setProduct({ ...product, unitPrice: Number(e.target.value) })} /></label>
-            <label className={label}>Cost price<input className={field} type="number" min={0} step="0.01" value={product.costPrice} required
-              onChange={(e) => setProduct({ ...product, costPrice: Number(e.target.value) })} /></label>
-          </div>
-          <button type="submit" disabled={busy} className={secondaryButton}>
-            <PlusCircle className="w-3.5 h-3.5" /> Add product
-          </button>
-        </form>
-      </div>
+          <form onSubmit={saveProduct} className="space-y-3">
+            <h3 className="text-sm font-semibold text-ink flex items-center gap-2">
+              <PackagePlus className="w-4 h-4 text-accent" aria-hidden="true" /> New product
+            </h3>
+            <div className="grid grid-cols-2 gap-3">
+              <label className={label}>Name<input className={field} value={product.name} maxLength={200} required
+                onChange={(e) => setProduct({ ...product, name: e.target.value })} /></label>
+              <label className={label}>Category<input className={field} value={product.category} maxLength={100} required
+                onChange={(e) => setProduct({ ...product, category: e.target.value })} /></label>
+              <label className={label}>Unit price<input className={field} type="number" min={0} step="0.01" value={product.unitPrice} required
+                onChange={(e) => setProduct({ ...product, unitPrice: Number(e.target.value) })} /></label>
+              <label className={label}>Cost price<input className={field} type="number" min={0} step="0.01" value={product.costPrice} required
+                onChange={(e) => setProduct({ ...product, costPrice: Number(e.target.value) })} /></label>
+            </div>
+            <button type="submit" disabled={busy} className={secondaryButton}>
+              <PlusCircle className="w-3.5 h-3.5" /> Add product
+            </button>
+          </form>
+        </div>
+      </details>
 
       {message && (
         <p className={`rounded-xl px-3.5 py-2 text-sm ${message.ok ? "bg-emerald-50 text-emerald-800" : "bg-red-50 text-red-800"}`} role="status">
