@@ -30,6 +30,8 @@ Manual: `npm install`, `npm run build`, `npm start` (or `npm run dev` for hot re
 | Setting | Default |
 |---|---|
 | `MSSQL_CONNECTION_STRING` | `Driver={ODBC Driver 17 for SQL Server};Server=localhost;Database=SalesDW;Trusted_Connection=yes;` |
+| `HOST` | `127.0.0.1` (this computer only; set `0.0.0.0` to allow other computers — the app has no login) |
+| `PORT` | `3000` (`start.bat` uses `3001`) |
 
 On start the server creates the `SalesDW` database and its tables (Windows login, no password). It starts empty: add customers, products and orders in the "ETL Pipeline" tab, or click "Load demo data" (or set `SEED_DEMO_DATA=true`).
 

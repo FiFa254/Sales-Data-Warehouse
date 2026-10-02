@@ -147,7 +147,7 @@ export default function SqlPlayground({ isEtlDone }: SqlPlaygroundProps) {
               {queryResult && (
                 <span className="font-mono text-[10.5px] text-[#D4AF37] flex items-center gap-1 pr-1 font-bold">
                   <CheckCircle2 className="w-3.5 h-3.5" />
-                  Execution: {queryResult.executionTimeMs} ms • {queryResult.rowCount} rows{queryResult.truncated ? " (showing 500)" : ""}
+                  Execution: {queryResult.executionTimeMs} ms • {queryResult.rowCount}{queryResult.truncated ? "+" : ""} rows{queryResult.truncated ? " (showing 500)" : ""}
                 </span>
               )}
             </div>

@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { MessageSquare, Send, Sparkles, User, AlertCircle, RefreshCw } from "lucide-react";
 import { ChatMessage } from "../types";
+import { api } from "../api";
 
 export default function WebChat() {
   const [messages, setMessages] = useState<ChatMessage[]>([
@@ -13,7 +14,12 @@ export default function WebChat() {
   const [userInput, setUserInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [errorText, setErrorText] = useState<string | null>(null);
+  const [offline, setOffline] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    api.health().then((h) => setOffline(h.assistant === "offline")).catch(() => undefined);
+  }, []);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -141,7 +147,7 @@ export default function WebChat() {
           </p>
         </div>
         <span className="text-[9px] bg-[#0A0A0A] text-[#D4AF37] border border-[#262626] px-2 py-0.5 rounded-none font-mono font-bold uppercase tracking-wider">
-          Online Assistant
+          {offline ? "Offline Answers" : "Online Assistant"}
         </span>
       </div>
 
