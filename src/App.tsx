@@ -5,17 +5,16 @@ import {
   Layers,
   Database,
   Terminal,
-  Activity,
   FileCode,
   AlertCircle,
-  TrendingDown,
-  Percent,
-  TrendingUp as TrendIcon,
-  Sparkles,
+  CheckCircle2,
   Award,
-  Clock,
   BookOpen,
-  ArrowRight
+  ArrowRight,
+  DollarSign,
+  ShoppingBag,
+  PieChart,
+  type LucideIcon
 } from "lucide-react";
 import {
   AreaChart,
@@ -27,7 +26,9 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  Legend
+  Legend,
+  Cell,
+  LabelList
 } from "recharts";
 
 import SchemaVisualizer from "./components/SchemaVisualizer";
@@ -38,8 +39,142 @@ import WebChat from "./components/WebChat";
 import SourceOrders from "./components/SourceOrders";
 import { api, Dashboard, money } from "./api";
 
+type TabId = "dashboard" | "etl" | "schema" | "queries" | "code";
+
+const TABS: { id: TabId; label: string; icon: LucideIcon }[] = [
+  { id: "dashboard", label: "Overview", icon: TrendingUp },
+  { id: "etl", label: "ETL Pipeline", icon: Server },
+  { id: "schema", label: "Star Schema", icon: Layers },
+  { id: "queries", label: "SQL Playground", icon: Terminal },
+  { id: "code", label: "PHP & MySQL", icon: FileCode }
+];
+
+const BANNER_TONES = {
+  warning: { box: "bg-amber-50 border-amber-200", icon: "bg-amber-100 text-amber-800", Icon: AlertCircle }
+};
+
+function StatusBanner({
+  tone,
+  title,
+  children,
+  actionLabel,
+  onAction
+}: {
+  tone: keyof typeof BANNER_TONES;
+  title: string;
+  children: React.ReactNode;
+  actionLabel?: string;
+  onAction?: () => void;
+}) {
+  const { box, icon, Icon } = BANNER_TONES[tone];
+  return (
+    <div className={`flex flex-col sm:flex-row sm:items-center gap-4 rounded-2xl border px-5 py-4 ${box}`}>
+      <div className="flex items-start gap-3 flex-1 min-w-0">
+        <span className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 ${icon}`}>
+          <Icon className="w-4.5 h-4.5" aria-hidden="true" />
+        </span>
+        <div className="min-w-0">
+          <p className="text-sm font-semibold text-ink">{title}</p>
+          <p className="text-sm text-muted mt-0.5 leading-relaxed">{children}</p>
+        </div>
+      </div>
+      {actionLabel && onAction && (
+        <button
+          type="button"
+          onClick={onAction}
+          className="inline-flex items-center justify-center gap-1.5 rounded-full bg-accent hover:bg-accent-strong text-white text-sm font-semibold px-4 py-2 shrink-0 transition-colors cursor-pointer"
+        >
+          {actionLabel}
+          <ArrowRight className="w-4 h-4" aria-hidden="true" />
+        </button>
+      )}
+    </div>
+  );
+}
+
+const CHART = {
+  revenue: "#2f5bea",
+  profit: "#d2601a",
+  barMuted: "#b7c7f8",
+  grid: "#e3e6ee",
+  axis: "#656b7d",
+  label: "#12141a"
+};
+
+const TOOLTIP_STYLE: React.CSSProperties = {
+  backgroundColor: "#ffffff",
+  border: "1px solid #e3e6ee",
+  borderRadius: 12,
+  boxShadow: "0 8px 24px -12px rgb(18 20 26 / 0.2)",
+  color: "#12141a",
+  fontSize: 12
+};
+
+const ACTIVE_DOT = { r: 5, strokeWidth: 2, stroke: "#ffffff" };
+
+const compactMoney = (value: number) => (Math.abs(value) >= 1000 ? `$${Math.round(value / 1000)}k` : `$${value}`);
+
+const PRINCIPLES = [
+  {
+    title: "Why a star schema?",
+    body: "By normalizing data into simpler dimensions surrounding a central fact table, analytics queries require far fewer multi-table JOINs, slashing database processing loads by up to 80%."
+  },
+  {
+    title: "PHP ETL pipeline",
+    body: "The custom script extracts raw transactions from the staging database, maps customer loyalty rankings dynamically using aggregated RFM attributes, and loads cleanly into central fact tables."
+  },
+  {
+    title: "Database indexes",
+    body: "B-Tree indexing is systematically configured on dimension relationships. This guarantees sub-millisecond query responses even as transactional ledger indexes scale to millions of orders."
+  }
+];
+
+function Panel({
+  title,
+  subtitle,
+  icon: Icon,
+  className = "",
+  children
+}: {
+  title: string;
+  subtitle?: string;
+  icon: LucideIcon;
+  className?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className={`rounded-[var(--radius-card)] bg-surface shadow-[var(--shadow-card)] p-5 sm:p-6 ${className}`}>
+      <div className="flex items-start gap-3">
+        <span className="w-9 h-9 rounded-full bg-accent-soft text-accent flex items-center justify-center shrink-0">
+          <Icon className="w-4 h-4" aria-hidden="true" />
+        </span>
+        <div className="min-w-0">
+          <h2 className="font-display text-base font-semibold text-ink">{title}</h2>
+          {subtitle && <p className="text-sm text-muted mt-0.5">{subtitle}</p>}
+        </div>
+      </div>
+      {children}
+    </section>
+  );
+}
+
 export default function App() {
-  const [activeTab, setActiveTab] = useState<"dashboard" | "etl" | "schema" | "queries" | "code">("dashboard");
+  const [activeTab, setActiveTab] = useState<TabId>("dashboard");
+
+  const handleTabKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    const index = TABS.findIndex((tab) => tab.id === activeTab);
+    const targets: Record<string, number> = {
+      ArrowRight: (index + 1) % TABS.length,
+      ArrowLeft: (index - 1 + TABS.length) % TABS.length,
+      Home: 0,
+      End: TABS.length - 1
+    };
+    const next = targets[event.key];
+    if (next === undefined) return;
+    event.preventDefault();
+    setActiveTab(TABS[next].id);
+    document.getElementById(`tab-${TABS[next].id}`)?.focus();
+  };
   const [dashboard, setDashboard] = useState<Dashboard | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
 
@@ -64,39 +199,39 @@ export default function App() {
   const trendData = dashboard?.trend ?? [];
   const tierData = dashboard?.tiers ?? [];
   const categoryPerformance = dashboard?.categories ?? [];
+  const topTierSpend = Math.max(0, ...tierData.map((tier) => tier.Spending));
 
   const handleEtlComplete = () => {
     refresh();
   };
 
   return (
-    <div className="min-h-screen bg-[#0A0A0A] text-[#E0E0E0] flex flex-col font-sans transition-colors duration-350">
-      {/* Decorative luxury golds ambient glimmers (subtle and high-end) */}
-      <div className="absolute top-0 left-1/4 w-96 h-96 bg-[#D4AF37]/3 rounded-full blur-3xl pointer-events-none"></div>
-      <div className="absolute bottom-10 right-1/4 w-80 h-80 bg-zinc-500/3 rounded-full blur-3xl pointer-events-none"></div>
-
-      {/* Main Top Header Navigation Bar */}
-      <header className="border-b border-[#262626] bg-[#0F0F0F]/90 backdrop-blur-md sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-none bg-[#141414] border border-[#262626] flex items-center justify-center shadow-[0_0_15px_rgba(212,175,55,0.08)]">
-              <Database className="w-5 h-5 text-[#D4AF37] animate-pulse" />
+    <div className="min-h-screen bg-canvas text-ink flex flex-col font-sans">
+      <header className="sticky top-0 z-50 bg-canvas/85 backdrop-blur-md border-b border-line/70">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-10 h-10 rounded-2xl bg-accent text-white flex items-center justify-center shrink-0">
+              <Database className="w-5 h-5" />
             </div>
-            <div>
-              <h1 className="text-md sm:text-lg font-serif italic text-[#D4AF37] tracking-wider flex items-center gap-1.5">
+            <div className="min-w-0">
+              <h1 className="font-display text-lg font-bold tracking-tight text-ink truncate">
                 Aether Sales Warehouse
               </h1>
-              <p className="text-[10px] uppercase tracking-[0.2em] text-zinc-500 font-mono">
-                Intelligence Layer v4.2 • Star Schema & SQL Server ETL Pipeline
+              <p className="text-xs text-muted truncate">
+                Star schema and ETL pipeline on SQL Server
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] bg-[#141414] border border-[#262626] text-zinc-400 font-bold px-3 py-1.5 rounded-none flex items-center gap-1.5 font-mono">
-              <Clock className="w-3.5 h-3.5 text-[#D4AF37]" />
-              {loadError ? "SQL Server: OFFLINE" : dashboard ? "SQL Server: SalesDW CONNECTED" : "SQL Server: CONNECTING..."}
-            </span>
-          </div>
+          <span
+            role="status"
+            className="shrink-0 inline-flex items-center gap-2 rounded-full bg-surface border border-line px-3.5 py-1.5 text-xs font-medium text-ink"
+          >
+            <span
+              aria-hidden="true"
+              className={`w-2 h-2 rounded-full ${loadError ? "bg-red-500" : dashboard ? "bg-emerald-500" : "bg-amber-400"}`}
+            />
+            {loadError ? "SQL Server offline" : dashboard ? "SalesDW connected" : "Connecting…"}
+          </span>
         </div>
       </header>
 
@@ -106,278 +241,261 @@ export default function App() {
         <div className="lg:col-span-8 space-y-6 flex flex-col">
           
           {loadError && (
-            <div className="bg-[#141414] border border-red-900/50 p-5 rounded-none text-[11px] text-red-300 font-mono">
-              Cannot load data from SQL Server: {loadError}
+            <div role="alert" className="flex items-start gap-3 rounded-2xl bg-red-50 border border-red-200 px-5 py-4 text-sm text-red-800">
+              <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" aria-hidden="true" />
+              <p>Cannot load data from SQL Server: {loadError}</p>
             </div>
           )}
 
-          {/* Quick Notice Banner if ETL not run yet */}
           {dashboard && !isEtlDone && (
-            <div className="bg-[#141414] border border-amber-900/40 p-5 rounded-none flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-[0_0_20px_rgba(212,175,55,0.02)]">
-              <div className="flex items-start gap-3">
-                <AlertCircle className="w-5 h-5 text-[#D4AF37] shrink-0 mt-0.5" />
-                <div>
-                  <h4 className="text-xs font-serif italic text-amber-200 uppercase tracking-wider">Warehouse Database Not Loaded (OLAP Data Empty)</h4>
-                  <p className="text-[11px] text-zinc-400 mt-1 leading-relaxed">
-                    The dashboard is reading the source tables (OLTP) directly. Open the "ETL Pipeline" tab and run the ETL to build the Star Schema in SQL Server.
-                  </p>
-                </div>
-              </div>
-              <button
-                onClick={() => setActiveTab("etl")}
-                className="bg-[#D4AF37] hover:bg-amber-300 text-slate-950 text-[11px] font-bold px-4 py-2 rounded-none shrink-0 flex items-center gap-1.5 transition-all duration-150 cursor-pointer shadow-[0_0_15px_rgba(212,175,55,0.2)] font-mono uppercase"
-              >
-                Execute ETL Now
-                <ArrowRight className="w-3.5 h-3.5" />
-              </button>
-            </div>
+            <StatusBanner
+              tone="warning"
+              title="The warehouse is not loaded yet"
+              actionLabel="Run the ETL"
+              onAction={() => setActiveTab("etl")}
+            >
+              The dashboard is reading the source (OLTP) tables directly. Run the ETL to build the star schema in SQL Server.
+            </StatusBanner>
           )}
 
           {isEtlDone && pendingOrders > 0 && (
-            <div className="bg-[#141414] border border-amber-900/40 p-5 rounded-none flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <p className="text-[11px] text-zinc-300 leading-relaxed">
-                <span className="text-amber-200 font-bold">{pendingOrders} new source order{pendingOrders > 1 ? "s" : ""}</span> not in the warehouse yet. Run the ETL again to load them.
-              </p>
-              <button
-                onClick={() => setActiveTab("etl")}
-                className="bg-[#D4AF37] hover:bg-amber-300 text-slate-950 text-[11px] font-bold px-4 py-2 rounded-none shrink-0 flex items-center gap-1.5 cursor-pointer font-mono uppercase"
-              >
-                Run ETL
-                <ArrowRight className="w-3.5 h-3.5" />
-              </button>
-            </div>
+            <StatusBanner
+              tone="warning"
+              title={`${pendingOrders} new source order${pendingOrders > 1 ? "s" : ""} not in the warehouse`}
+              actionLabel="Run ETL again"
+              onAction={() => setActiveTab("etl")}
+            >
+              Run the ETL again to load them into the star schema.
+            </StatusBanner>
           )}
 
           {isEtlDone && pendingOrders === 0 && (
-            <div className="bg-[#141414] border border-emerald-900/40 p-5 rounded-none flex items-center gap-4 shadow-[0_0_25px_rgba(16,185,129,0.03)]">
-              <div className="w-10 h-10 rounded-none bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0">
-                <Award className="w-5 h-5 text-[#D4AF37]" />
-              </div>
-              <div>
-                <h4 className="text-xs font-serif italic text-[#D4AF37] uppercase tracking-wider">Warehouse & ETL Scripts Ready!</h4>
-                <p className="text-[11px] text-zinc-400 mt-0.5 leading-relaxed">
-                  The dashboard is reading the Star Schema in SQL Server{dashboard?.lastEtl ? ` (last ETL: ${new Date(dashboard.lastEtl.finishedAt).toLocaleString()}, ${dashboard.lastEtl.rowsLoaded} fact rows in ${dashboard.lastEtl.durationMs} ms)` : ""}. Run live queries in the SQL Playground.
-                </p>
-              </div>
-            </div>
+            <p className="flex items-start gap-2 text-sm text-muted" role="status">
+              <CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0 text-emerald-700" aria-hidden="true" />
+              <span>
+                <span className="font-semibold text-ink">Warehouse is up to date</span>
+                {dashboard?.lastEtl
+                  ? ` · last ETL ${new Date(dashboard.lastEtl.finishedAt).toLocaleString()}, ${dashboard.lastEtl.rowsLoaded} fact rows`
+                  : ""}
+              </span>
+            </p>
           )}
 
-          {/* Tab Navigation buttons */}
-          <div className="flex flex-wrap gap-1.5 border-b border-[#262626] pb-2">
-            {[
-              { id: "dashboard", label: "📊 Overview Dashboard", icon: TrendingUp },
-              { id: "etl", label: "🔄 ETL Pipeline", icon: Server },
-              { id: "schema", label: "🛠️ Star Schema", icon: Layers },
-              { id: "queries", label: "💻 SQL Playground", icon: Terminal },
-              { id: "code", label: "💾 PHP & MySQL Reference", icon: FileCode }
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id as any)}
-                className={`flex items-center gap-2.5 px-4 py-3 rounded-none text-xs font-medium transition-all duration-150 border cursor-pointer ${
-                  activeTab === tab.id
-                    ? "bg-[#141414] border-l-2 border-[#D4AF37] text-[#D4AF37] shadow-[0_0_15px_rgba(212,175,55,0.05)] border-t-[#262626] border-r-[#262626] border-b-[#262626]"
-                    : "bg-[#0F0F0F] hover:bg-[#141414] border-[#262626] text-zinc-400 hover:text-zinc-200"
-                }`}
-              >
-                <tab.icon className="w-3.5 h-3.5" />
-                {tab.label}
-              </button>
-            ))}
+          <div
+            role="tablist"
+            aria-label="Warehouse views"
+            onKeyDown={handleTabKeyDown}
+            className="flex gap-1 overflow-x-auto rounded-full bg-surface border border-line p-1 shadow-[var(--shadow-card)] self-start max-w-full custom-scrollbar"
+          >
+            {TABS.map((tab) => {
+              const selected = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  id={`tab-${tab.id}`}
+                  type="button"
+                  role="tab"
+                  aria-selected={selected}
+                  aria-controls="tab-panel"
+                  tabIndex={selected ? 0 : -1}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex items-center gap-2 whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium transition-colors cursor-pointer ${
+                    selected ? "bg-accent text-white" : "text-muted hover:text-ink hover:bg-subtle"
+                  }`}
+                >
+                  <tab.icon className="w-4 h-4" aria-hidden="true" />
+                  {tab.label}
+                </button>
+              );
+            })}
           </div>
 
           {/* TAB CONTENTS RENDER */}
-          <div className="flex-1">
+          <div id="tab-panel" role="tabpanel" aria-labelledby={`tab-${activeTab}`} className="flex-1">
             {activeTab === "dashboard" && (
               <div className="space-y-6">
                 
                 {/* 1. Key Performance Indicators Blocks */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 2xl:grid-cols-4 gap-4">
                   {[
                     {
-                      label: "Total Revenue",
+                      label: "Total revenue",
                       value: money(metrics.revenue),
-                      desc: isEtlDone ? "fact_sales (star schema)" : "oltp tables (source)",
-                      color: "text-[#D4AF37]"
+                      desc: isEtlDone ? "fact_sales · star schema" : "oltp · source tables",
+                      icon: DollarSign
                     },
                     {
-                      label: "Net Profit",
+                      label: "Net profit",
                       value: money(metrics.profit),
                       desc: `Cost ${money(metrics.cost)}`,
-                      color: "text-[#D4AF37]"
+                      icon: TrendingUp
                     },
                     {
-                      label: "Sales Transactions",
-                      value: `${metrics.orders} Orders`,
-                      desc: `${metrics.items} items • AOV ${money(metrics.aov)}`,
-                      color: "text-[#E0E0E0]"
+                      label: "Orders",
+                      value: String(metrics.orders),
+                      desc: `${metrics.items} items · AOV ${money(metrics.aov)}`,
+                      icon: ShoppingBag
                     },
                     {
-                      label: "Profit Margin",
+                      label: "Profit margin",
                       value: `${metrics.margin.toFixed(2)}%`,
-                      desc: "profit / revenue",
-                      color: "text-zinc-400"
+                      desc: "Profit ÷ revenue",
+                      icon: PieChart
                     }
-                  ].map((kpi, idx) => (
-                    <div key={idx} className="bg-[#141414] p-5 rounded-none border border-[#262626] space-y-2 relative overflow-hidden group">
-                      <div className="text-[10px] uppercase tracking-widest text-zinc-500">{kpi.label}</div>
-                      <div className={`text-xl sm:text-2xl font-serif italic ${idx === 0 || idx === 1 ? 'text-[#D4AF37]' : 'text-[#E0E0E0]'}`}>
-                        {kpi.value}
-                      </div>
-                      <div className="flex items-center gap-1.5 text-[9.5px] text-zinc-650 font-mono">
-                        <span className={`${isEtlDone ? "text-emerald-500" : "text-amber-500"} font-bold`}>
+                  ].map((kpi, idx) => {
+                    const featured = idx === 0;
+                    return (
+                      <div
+                        key={kpi.label}
+                        className={`rounded-[var(--radius-card)] p-5 flex flex-col gap-4 ${
+                          featured ? "bg-accent text-white" : "bg-surface text-ink shadow-[var(--shadow-card)]"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <span className={`text-sm font-medium ${featured ? "text-white/85" : "text-muted"}`}>{kpi.label}</span>
+                          <span
+                            className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                              featured ? "bg-white/15 text-white" : "bg-accent-soft text-accent"
+                            }`}
+                          >
+                            <kpi.icon className="w-4 h-4" aria-hidden="true" />
+                          </span>
+                        </div>
+                        <div className="font-display text-3xl font-bold tracking-tight tabular-nums">
+                          {kpi.value}
+                        </div>
+                        <span
+                          className={`self-start rounded-full px-2.5 py-1 text-xs font-medium truncate max-w-full ${
+                            featured ? "bg-white/15 text-white" : "bg-subtle text-muted"
+                          }`}
+                        >
                           {kpi.desc}
                         </span>
                       </div>
-                      <div className="absolute right-0 bottom-0 top-0 w-[2px] bg-[#262626] group-hover:bg-[#D4AF37]/40 transition-colors"></div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
 
                 {/* 2. Analytical Graphs sections */}
-                <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-                  
-                  {/* Revenue vs Profit Time Series Monthly Trends */}
-                  <div className="md:col-span-12 lg:col-span-7 bg-[#141414] p-6 rounded-none border border-[#262626] flex flex-col justify-between">
-                    <div>
-                      <h4 className="text-xs uppercase font-serif italic tracking-wider text-[#D4AF37] flex items-center gap-1.5">
-                        <TrendingUp className="w-4 h-4 text-[#D4AF37]" />
-                        Monthly Sales and Profit Trends
-                      </h4>
-                      <p className="text-[10.5px] text-zinc-500 mt-1 leading-relaxed">
-                        {isEtlDone ? "From fact_sales joined to dim_time in the Star Schema" : "From the source order tables (run the ETL to use the Star Schema)"}
-                      </p>
-                    </div>
-
-                    <div className="h-[210px] w-full mt-4">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+                  <Panel
+                    className="lg:col-span-7"
+                    icon={TrendingUp}
+                    title="Monthly sales and profit"
+                    subtitle={isEtlDone ? "fact_sales joined to dim_time in the star schema" : "Source order tables · run the ETL to use the star schema"}
+                  >
+                    <div className="h-[240px] w-full mt-4">
                       <ResponsiveContainer width="100%" height="100%">
-                        <AreaChart data={trendData} margin={{ top: 5, right: 5, left: -25, bottom: 0 }}>
+                        <AreaChart data={trendData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
                           <defs>
-                            <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="5%" stopColor="#D4AF37" stopOpacity={0.25}/>
-                              <stop offset="95%" stopColor="#D4AF37" stopOpacity={0}/>
-                            </linearGradient>
-                            <linearGradient id="colorProf" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="5%" stopColor="#A3A3A3" stopOpacity={0.2}/>
-                              <stop offset="95%" stopColor="#A3A3A3" stopOpacity={0}/>
+                            <linearGradient id="fillRevenue" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="0%" stopColor={CHART.revenue} stopOpacity={0.18} />
+                              <stop offset="100%" stopColor={CHART.revenue} stopOpacity={0} />
                             </linearGradient>
                           </defs>
-                          <CartesianGrid strokeDasharray="3 3" stroke="#262626" />
-                          <XAxis dataKey="month" stroke="#737373" fontSize={10} tickLine={false} />
-                          <YAxis stroke="#737373" fontSize={10} tickLine={false} />
-                          <Tooltip contentStyle={{ backgroundColor: "#0A0A0A", borderColor: "#262626", color: "#E0E0E0" }} />
-                          <Legend wrapperStyle={{ fontSize: 10, marginTop: 5 }} />
-                          <Area type="monotone" dataKey="Revenue" stroke="#D4AF37" strokeWidth={2} fillOpacity={1} fill="url(#colorRev)" name="Revenue Summary" />
-                          <Area type="monotone" dataKey="Profit" stroke="#A3A3A3" strokeWidth={1.5} fillOpacity={1} fill="url(#colorProf)" name="Net Profit Stats" />
+                          <CartesianGrid vertical={false} stroke={CHART.grid} />
+                          <XAxis dataKey="month" axisLine={false} tickLine={false} interval={0} padding={{ left: 12, right: 12 }} tick={{ fill: CHART.axis, fontSize: 12 }} tickFormatter={(month: string) => month.slice(0, 3)} />
+                          <YAxis axisLine={false} tickLine={false} width={48} tick={{ fill: CHART.axis, fontSize: 12 }} tickFormatter={compactMoney} />
+                          <Tooltip
+                            cursor={{ stroke: CHART.axis, strokeWidth: 1 }}
+                            contentStyle={TOOLTIP_STYLE}
+                            formatter={(value: number) => money(value)}
+                          />
+                          <Legend verticalAlign="top" align="right" iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 12, paddingBottom: 8 }} />
+                          <Area type="monotone" dataKey="Revenue" name="Revenue" stroke={CHART.revenue} strokeWidth={2} fill="url(#fillRevenue)" activeDot={ACTIVE_DOT} />
+                          <Area type="monotone" dataKey="Profit" name="Profit" stroke={CHART.profit} strokeWidth={2} fill="transparent" activeDot={ACTIVE_DOT} />
                         </AreaChart>
                       </ResponsiveContainer>
                     </div>
-                  </div>
+                    <table className="sr-only">
+                      <caption>Monthly revenue and profit</caption>
+                      <thead><tr><th scope="col">Month</th><th scope="col">Revenue</th><th scope="col">Profit</th></tr></thead>
+                      <tbody>
+                        {trendData.map((row) => (
+                          <tr key={row.month}><th scope="row">{row.month}</th><td>{money(row.Revenue)}</td><td>{money(row.Profit)}</td></tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </Panel>
 
-                  {/* Loyalty Grouping - Customers Tiers Value Metrics */}
-                  <div className="md:col-span-12 lg:col-span-5 bg-[#141414] p-6 rounded-none border border-[#262626] flex flex-col justify-between">
-                    <div>
-                      <h4 className="text-xs uppercase font-serif italic tracking-wider text-[#D4AF37] flex items-center gap-1.5">
-                        <Award className="w-4 h-4 text-[#D4AF37]" />
-                        Customer Loyalty Tiers (AOV Profile)
-                      </h4>
-                      <p className="text-[10.5px] text-zinc-500 mt-1">
-                        {isEtlDone ? "Lifetime spend per tier from dim_customers (tiers computed by the ETL)" : "Tiers are computed by the ETL - run it to fill this chart"}
-                      </p>
-                    </div>
-
-                    <div className="h-[210px] w-full mt-4">
+                  <Panel
+                    className="lg:col-span-5"
+                    icon={Award}
+                    title="Spend by loyalty tier"
+                    subtitle={isEtlDone ? "Lifetime spend per tier from dim_customers" : "Tiers are computed by the ETL · run it to fill this chart"}
+                  >
+                    <div className="h-[240px] w-full mt-4">
                       <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={tierData} margin={{ top: 5, right: 5, left: -25, bottom: 0 }}>
-                          <CartesianGrid strokeDasharray="3 3" stroke="#262626" />
-                          <XAxis dataKey="name" stroke="#737373" fontSize={10} tickLine={false} />
-                          <YAxis stroke="#737373" fontSize={10} tickLine={false} />
-                          <Tooltip contentStyle={{ backgroundColor: "#0A0A0A", borderColor: "#262626", color: "#E0E0E0" }} />
-                          <Bar dataKey="Spending" fill="#D4AF37" fillOpacity={0.8} radius={[0, 0, 0, 0]} name="Total Spend" />
+                        <BarChart data={tierData} margin={{ top: 24, right: 8, left: 0, bottom: 0 }}>
+                          <CartesianGrid vertical={false} stroke={CHART.grid} />
+                          <XAxis dataKey="name" axisLine={false} tickLine={false} interval={0} tick={{ fill: CHART.axis, fontSize: 12 }} />
+                          <YAxis axisLine={false} tickLine={false} width={48} tick={{ fill: CHART.axis, fontSize: 12 }} tickFormatter={compactMoney} />
+                          <Tooltip cursor={{ fill: CHART.grid, opacity: 0.5 }} contentStyle={TOOLTIP_STYLE} formatter={(value: number) => money(value)} />
+                          <Bar dataKey="Spending" name="Total spend" barSize={24} radius={[4, 4, 0, 0]}>
+                            {tierData.map((tier) => (
+                              <Cell key={tier.name} fill={tier.Spending === topTierSpend ? CHART.revenue : CHART.barMuted} />
+                            ))}
+                            <LabelList dataKey="Spending" position="top" formatter={compactMoney} style={{ fill: CHART.label, fontSize: 12, fontWeight: 600 }} />
+                          </Bar>
                         </BarChart>
                       </ResponsiveContainer>
                     </div>
-                  </div>
+                    <table className="sr-only">
+                      <caption>Lifetime spend by loyalty tier</caption>
+                      <thead><tr><th scope="col">Tier</th><th scope="col">Spend</th><th scope="col">Customers</th></tr></thead>
+                      <tbody>
+                        {tierData.map((tier) => (
+                          <tr key={tier.name}><th scope="row">{tier.name}</th><td>{money(tier.Spending)}</td><td>{tier.Customers}</td></tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </Panel>
                 </div>
 
                 {/* 3. Category performance list */}
-                <div className="bg-[#141414] p-6 rounded-none border border-[#262626] space-y-4">
-                  <div>
-                    <h4 className="text-xs uppercase font-serif italic tracking-wider text-[#D4AF37] flex items-center gap-1.5">
-                      <Layers className="w-4 h-4 text-[#D4AF37]" />
-                      Product Category Performance
-                    </h4>
-                    <p className="text-[10.5px] text-zinc-500 mt-0.5">
-                      Deep dive into revenues and profit margins using dimensional slices from the Product Dimension table
-                    </p>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {categoryPerformance.map((cat, idx) => {
-                      const percent = cat.sales > 0 ? ((cat.Profit / cat.sales) * 100).toFixed(1) : "0";
+                <Panel icon={Layers} title="Category performance" subtitle="Revenue and profit margin by product category from dim_products">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-4">
+                    {categoryPerformance.map((cat) => {
+                      const percent = cat.sales > 0 ? (cat.Profit / cat.sales) * 100 : 0;
                       return (
-                        <div key={idx} className="bg-[#0F0F0F] p-4 rounded-none border border-[#262626] space-y-3">
-                          <div className="flex items-center justify-between text-xs font-bold text-zinc-250">
-                            <span>{cat.name}</span>
-                            <span className="text-[10px] text-[#D4AF37] px-1.5 py-0.2 bg-[#141414] border border-[#262626] rounded-none font-mono">
-                              {percent}% margin
-                            </span>
+                        <div key={cat.name} className="rounded-2xl bg-subtle p-4 flex flex-col gap-3">
+                          <div>
+                            <p className="text-sm font-semibold text-ink">{cat.name}</p>
+                            <p className="text-xs text-muted tabular-nums">{percent.toFixed(1)}% margin</p>
                           </div>
-                          
-                          <div className="space-y-1.5">
-                            <div className="flex justify-between text-[11px] text-zinc-500 font-mono">
-                              <span>Revenues:</span>
-                              <span className="font-bold text-zinc-300">{money(cat.sales)}</span>
+                          <dl className="grid grid-cols-2 gap-2 text-sm">
+                            <div>
+                              <dt className="text-xs text-muted">Revenue</dt>
+                              <dd className="font-semibold text-ink tabular-nums">{money(cat.sales)}</dd>
                             </div>
-                            <div className="flex justify-between text-[11px] text-zinc-500 font-mono">
-                              <span>Net Profit:</span>
-                              <span className="font-bold text-[#D4AF37]">{money(cat.Profit)}</span>
+                            <div>
+                              <dt className="text-xs text-muted">Net profit</dt>
+                              <dd className="font-semibold text-ink tabular-nums">{money(cat.Profit)}</dd>
                             </div>
-                          </div>
-
-                          <div className="space-y-1 mt-2">
-                            <div className="w-full bg-[#1A1A1A] h-1.5">
-                              <div 
-                                className="bg-[#D4AF37] h-full transition-all duration-500" 
-                                style={{ width: `${percent}%` }}
-                              ></div>
-                            </div>
+                          </dl>
+                          <div className="h-2 w-full rounded-full bg-line overflow-hidden" aria-hidden="true">
+                            <div className="h-full rounded-full bg-accent transition-[width] duration-500" style={{ width: `${Math.min(percent, 100)}%` }} />
                           </div>
                         </div>
                       );
                     })}
                   </div>
-                </div>
+                </Panel>
 
                 {/* 4. Lesson Introduction Block */}
-                <div className="bg-[#141414] p-6 rounded-none border border-[#262626] space-y-3.5">
-                  <h4 className="text-xs uppercase font-serif italic tracking-wider text-[#D4AF37] flex items-center gap-1.5">
-                    <BookOpen className="w-4 h-4 text-[#D4AF37]" />
-                    Data Warehouse Architecture & Design Principles
-                  </h4>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs leading-relaxed text-zinc-400">
-                    <div className="bg-[#0F0F0F] p-4 rounded-none border border-[#262626] space-y-1.5">
-                      <span className="text-[#D4AF37] font-serif italic font-bold">1. Why Star Schema?</span>
-                      <p className="text-[11px] text-zinc-500">
-                        By normalizing data into simpler dimensions surrounding a central fact table, analytics queries require far fewer multi-table JOINs, slashing database processing loads by up to 80%.
-                      </p>
-                    </div>
-
-                    <div className="bg-[#0F0F0F] p-4 rounded-none border border-[#262626] space-y-1.5">
-                      <span className="text-[#D4AF37] font-serif italic font-bold">2. PHP ETL Pipeline</span>
-                      <p className="text-[11px] text-zinc-500">
-                        The custom script extracts raw transactions from the staging database, maps customer loyalty rankings dynamically using aggregated RFM attributes, and loads cleanly into central fact tables.
-                      </p>
-                    </div>
-
-                    <div className="bg-[#0F0F0F] p-4 rounded-none border border-[#262626] space-y-1.5">
-                      <span className="text-[#D4AF37] font-serif italic font-bold">3. Database Indexes</span>
-                      <p className="text-[11px] text-zinc-500">
-                        B-Tree indexing is systematically configured on dimension relationships. This guarantees sub-millisecond query responses even as transactional ledger indexes scale to millions of orders.
-                      </p>
-                    </div>
-                  </div>
-                </div>
+                <Panel icon={BookOpen} title="Data warehouse design principles">
+                  <ol className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4">
+                    {PRINCIPLES.map((item, idx) => (
+                      <li key={item.title} className="rounded-2xl bg-subtle p-4 space-y-2">
+                        <span className="inline-flex w-7 h-7 items-center justify-center rounded-full bg-accent text-white text-xs font-bold">
+                          {idx + 1}
+                        </span>
+                        <p className="text-sm font-semibold text-ink">{item.title}</p>
+                        <p className="text-sm text-muted leading-relaxed">{item.body}</p>
+                      </li>
+                    ))}
+                  </ol>
+                </Panel>
 
               </div>
             )}
@@ -410,9 +528,11 @@ export default function App() {
       </main>
 
       {/* Aesthetic Footer */}
-      <footer className="border-t border-[#262626] bg-[#0F0F0F] py-8 mt-12 text-center text-[10px] tracking-widest text-zinc-600 font-mono flex flex-col items-center justify-center gap-2">
-        <span>© 2026 AETHER SYSTEMS. ALL RIGHTS RESERVED.</span>
-        <span className="opacity-50">ENGINE: NODE.JS + EXPRESS API • SQL SERVER (SalesDW)</span>
+      <footer className="mt-12 border-t border-line/70">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-faint">
+          <span>© 2026 Aether Systems</span>
+          <span>Node.js + Express API · SQL Server (SalesDW)</span>
+        </div>
       </footer>
     </div>
   );

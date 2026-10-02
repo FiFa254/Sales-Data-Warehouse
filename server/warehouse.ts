@@ -366,7 +366,7 @@ export class Warehouse {
     const rowsLoaded = steps[steps.length - 1].rows;
     const durationMs = finishedAt.getTime() - startedAt.getTime();
     await this.db.run('INSERT INTO dbo.etl_runs (started_at, finished_at, rows_loaded, duration_ms) VALUES (?, ?, ?, ?)',
-      [startedAt, finishedAt, rowsLoaded, durationMs]);
+      [startedAt.toISOString(), finishedAt.toISOString(), rowsLoaded, durationMs]);
 
     return { steps, rowsLoaded, durationMs, finishedAt: finishedAt.toISOString() };
   }
@@ -454,6 +454,7 @@ export class Warehouse {
       // so the connection never stays impersonated.
       result = await connection.promises.query(
         `DECLARE @q NVARCHAR(MAX) = ?;
+         SET ROWCOUNT ${MAX_ROWS + 1};
          EXECUTE AS USER = N'playground_reader';
          BEGIN TRY
            EXEC sp_executesql @q;
@@ -476,7 +477,7 @@ export class Warehouse {
     const headers: string[] = (result.firstMeta ?? []).map((meta: { name: string }) => meta.name);
     const all: Record<string, unknown>[] = result.first ?? [];
     const rows = all.slice(0, MAX_ROWS).map((row) => headers.map((h) => formatCell(row[h])));
-    return { headers, rows, rowCount: all.length, truncated: all.length > MAX_ROWS, executionTimeMs };
+    return { headers, rows, rowCount: rows.length, truncated: all.length > MAX_ROWS, executionTimeMs };
   }
 
   close(): Promise<void> {
@@ -499,7 +500,7 @@ export function validateSelect(text: string): string {
   if (!/^(select|with)\b/i.test(withoutComments)) {
     throw new QueryRejected('The playground is read-only: start the query with SELECT or WITH.');
   }
-  if (/\b(insert|update|delete|merge|drop|alter|create|truncate|exec|execute|grant|revoke|deny|backup|restore|shutdown|kill|dbcc|waitfor|openrowset|opendatasource|openquery|revert|use)\b/i.test(withoutComments)
+  if (/\b(insert|update|delete|merge|drop|alter|create|truncate|exec|execute|grant|revoke|deny|backup|restore|shutdown|kill|dbcc|waitfor|openrowset|opendatasource|openquery|revert|use|set)\b/i.test(withoutComments)
       || /\binto\b/i.test(withoutComments)) {
     throw new QueryRejected('The playground is read-only: only SELECT queries are allowed.');
   }

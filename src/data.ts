@@ -6,7 +6,7 @@ import { SqlQuery } from "./types";
 export const sampleQueries: SqlQuery[] = [
   {
     id: "q1",
-    title: "💰 Revenue, Profit, and Cost Summary (Overview)",
+    title: "Revenue, Profit, and Cost Summary (Overview)",
     sql: `SELECT 
     COUNT(fs.sale_id) AS Total_Sales_Count,
     SUM(fs.quantity) AS Total_Items_Sold,
@@ -20,7 +20,7 @@ FROM fact_sales fs;`,
   },
   {
     id: "q2",
-    title: "📈 Monthly Sales and Profit Trends",
+    title: "Monthly Sales and Profit Trends",
     sql: `SELECT 
     dt.year AS Year,
     dt.month_name AS Month,
@@ -35,7 +35,7 @@ ORDER BY MIN(dt.time_key);`,
   },
   {
     id: "q3",
-    title: "👥 Customer Loyalty Segment Analysis (RFM Tiers)",
+    title: "Customer Loyalty Segment Analysis (RFM Tiers)",
     sql: `SELECT 
     dc.tier AS Customer_Tier,
     COUNT(DISTINCT dc.customer_id) AS Total_Customers,
@@ -51,7 +51,7 @@ ORDER BY Total_Spending DESC;`,
   },
   {
     id: "q4",
-    title: "📦 Best Selling and High Revenue Products",
+    title: "Best Selling and High Revenue Products",
     sql: `SELECT TOP 5
     dp.name AS Product_Name,
     dp.category AS Category,
@@ -67,7 +67,7 @@ ORDER BY Total_Profit DESC;`,
   },
   {
     id: "q5",
-    title: "📍 Top Generating Sales Provinces (Geographical Analysis)",
+    title: "Top Generating Sales Provinces (Geographical Analysis)",
     sql: `SELECT 
     dc.city AS Province,
     SUM(fs.revenue) AS Revenue,

@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import { api, Dashboard, EtlResult } from "../api";
-import { Disc, Play, Server, ArrowRight, CheckCircle2, ChevronRight, Activity, Database, Award } from "lucide-react";
+import { Play, Server, ArrowRight, Check, ChevronRight, Activity, Database } from "lucide-react";
+
+type EtlStatus = "idle" | "extracting" | "transforming" | "loading" | "completed";
 
 interface EtlSimulatorProps {
   onEtlComplete: (success: boolean) => void;
@@ -9,7 +11,7 @@ interface EtlSimulatorProps {
 }
 
 export default function EtlSimulator({ onEtlComplete, isEtlDone, dashboard }: EtlSimulatorProps) {
-  const [status, setStatus] = useState<"idle" | "extracting" | "transforming" | "loading" | "completed">(
+  const [status, setStatus] = useState<EtlStatus>(
     isEtlDone ? "completed" : "idle"
   );
   const [progress, setProgress] = useState(isEtlDone ? 100 : 0);
@@ -29,7 +31,9 @@ export default function EtlSimulator({ onEtlComplete, isEtlDone, dashboard }: Et
     if (logContainerRef.current) {
       logContainerRef.current.scrollTop = logContainerRef.current.scrollHeight;
     }
-  }, [logs]);  const handleStartETL = async () => {
+  }, [logs]);
+
+  const handleStartETL = async () => {
     setStatus("extracting");
     setProgress(5);
     setLogs([]);
@@ -63,155 +67,184 @@ export default function EtlSimulator({ onEtlComplete, isEtlDone, dashboard }: Et
     onEtlComplete(true);
   };
 
+  const running = status !== "idle" && status !== "completed";
+  const activeIndex = PHASE_INDEX[status];
+
+  const phaseState = (index: number): StepState => {
+    if (status === "completed" || (activeIndex !== undefined && index < activeIndex)) return "done";
+    return index === activeIndex ? "active" : "pending";
+  };
+
   return (
-    <div className="bg-[#141414] p-6 rounded-none border border-[#262626] space-y-6">
-      {/* Target Section Title Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#262626] pb-5">
-        <div>
-          <h3 className="text-base sm:text-lg font-serif italic text-[#D4AF37] tracking-wider flex items-center gap-2">
-            <Server className="text-[#D4AF37] w-5 h-5" />
-            ETL Pipeline (SQL Server)
-          </h3>
-          <p className="text-xs text-zinc-400 mt-1">
-            Runs a real Extract, Transform and Load in SQL Server: source tables (schema oltp) into the Star Schema (dim_* and fact_sales).
-          </p>
+    <section className="rounded-[var(--radius-card)] bg-surface shadow-[var(--shadow-card)] p-5 sm:p-6 space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-start gap-3 min-w-0">
+          <span className="w-9 h-9 rounded-full bg-accent-soft text-accent flex items-center justify-center shrink-0">
+            <Server className="w-4 h-4" aria-hidden="true" />
+          </span>
+          <div className="min-w-0">
+            <h2 className="font-display text-base font-semibold text-ink">ETL pipeline</h2>
+            <p className="text-sm text-muted mt-0.5">
+              A real extract, transform and load in SQL Server: source tables (schema oltp) into the star schema (dim_* and fact_sales).
+            </p>
+          </div>
         </div>
         <button
+          type="button"
           onClick={handleStartETL}
-          disabled={status !== "idle" && status !== "completed"}
-          className={`flex items-center gap-2 px-5 py-2.5 rounded-none text-xs font-bold transition-all duration-150 uppercase tracking-wider font-mono shadow-[0_0_15px_rgba(212,175,55,0.12)] ${
-            status !== "idle" && status !== "completed"
-              ? "bg-[#0F0F0F] text-zinc-650 border border-zinc-850 cursor-not-allowed"
-              : "bg-[#D4AF37] hover:bg-amber-300 text-slate-950 border border-[#D4AF37]/50 cursor-pointer"
-          }`}
+          disabled={running}
+          className="inline-flex items-center justify-center gap-2 rounded-full bg-accent hover:bg-accent-strong disabled:bg-line disabled:text-faint disabled:cursor-not-allowed text-white text-sm font-semibold px-5 py-2.5 shrink-0 transition-colors cursor-pointer"
         >
-          <Play className="w-4 h-4 fill-current" />
+          {running ? <SpinnerIcon /> : <Play className="w-4 h-4 fill-current" aria-hidden="true" />}
           Run ETL
         </button>
       </div>
 
-      {/* Database Node Connectors block */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center bg-[#0F0F0F] p-5 rounded-none border border-[#262626]">
-        {/* Source DB Box */}
-        <div className="bg-[#141414] p-4 rounded-none border border-[#262626] text-center space-y-2 relative">
-          <div className="mx-auto w-10 h-10 bg-[#0F0F0F] border border-[#262626] text-[#D4AF37] rounded-none flex items-center justify-center">
-            <Server className="w-5 h-5" />
-          </div>
-          <div className="font-serif italic text-sm text-[#E0E0E0]">Source tables (oltp.*)</div>
-          <div className="text-[10px] text-zinc-500 font-mono">{dashboard ? `${dashboard.source_counts.customers} Customers • ${dashboard.source_counts.products} Products • ${dashboard.source_counts.items} Order lines` : "Loading..."}</div>
-          <div className="pt-2">
-            <span className="text-[9px] bg-[#0A0A0A] text-amber-500 px-2 py-0.5 rounded-none border border-amber-900/40 uppercase tracking-wider font-mono font-bold">
-              Raw Staging Staged
-            </span>
+      <ol className="grid grid-cols-3 gap-2" aria-label="ETL phases">
+        {PHASES.map((phase, index) => {
+          const state = phaseState(index);
+          return (
+            <li key={phase.label} className="flex flex-col gap-2">
+              <div className={`h-1.5 rounded-full ${state === "pending" ? "bg-line" : "bg-accent"}`} />
+              <div className="flex items-center gap-2">
+                <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${STEP_BADGE[state]}`}>
+                  {state === "done" ? <Check className="w-3.5 h-3.5" aria-hidden="true" /> : index + 1}
+                </span>
+                <div className="min-w-0">
+                  <p className={`text-sm font-semibold ${state === "pending" ? "text-muted" : "text-ink"}`}>{phase.label}</p>
+                  <p className="text-xs text-muted truncate">{phase.detail}</p>
+                </div>
+              </div>
+            </li>
+          );
+        })}
+      </ol>
+
+      <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-3 items-stretch">
+        <div className="rounded-2xl bg-subtle p-4 flex items-start gap-3">
+          <span className="w-10 h-10 rounded-xl bg-surface text-accent flex items-center justify-center shrink-0">
+            <Server className="w-5 h-5" aria-hidden="true" />
+          </span>
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-ink">Source tables</p>
+            <p className="text-xs text-muted font-mono">oltp.*</p>
+            <p className="text-sm text-muted mt-1">
+              {dashboard
+                ? `${dashboard.source_counts.customers} customers · ${dashboard.source_counts.products} products · ${dashboard.source_counts.items} order lines`
+                : "Loading…"}
+            </p>
           </div>
         </div>
 
-        {/* Transition Progress Animation Arrow */}
-        <div className="flex flex-col items-center justify-center text-center space-y-2">
-          <div className="text-[10px] uppercase text-zinc-500 tracking-[0.15em] font-mono">
-            ETL Ingress Status
-          </div>
-          
-          <div className="w-full flex items-center justify-center gap-2 text-zinc-350 text-[10.5px] font-mono font-bold bg-[#141414] px-3 py-1.5 rounded-none border border-[#262626]">
-            {status === "idle" && <span className="text-zinc-500 uppercase">STANDBY FOR TRIGGER</span>}
-            {status === "extracting" && (
-              <span className="text-[#D4AF37] flex items-center gap-1.5 uppercase">
-                <SpinnerIcon /> EXTRACTING RAW METRICS...
-              </span>
-            )}
-            {status === "transforming" && (
-              <span className="text-[#D4AF37] flex items-center gap-1.5 uppercase">
-                <SpinnerIcon /> TRANSFORMING DIM SCHEMA...
-              </span>
-            )}
-            {status === "loading" && (
-              <span className="text-amber-500 flex items-center gap-1.5 uppercase">
-                <SpinnerIcon /> LOADING FACT STREAMS...
-              </span>
-            )}
-            {status === "completed" && (
-              <span className="text-emerald-500 flex items-center gap-1.5 uppercase font-bold">
-                <CheckCircle2 className="w-3.5 h-3.5" /> PIPELINE SYNCHRONIZED
-              </span>
-            )}
-          </div>
-
-          <div className="w-full bg-[#1A1A1A] rounded-none h-1.5 overflow-hidden relative">
-            <div
-              className={`h-full transition-all duration-300 ${
-                status === "completed"
-                  ? "bg-emerald-500"
-                  : "bg-[#D4AF37]"
-              }`}
-              style={{ width: `${progress}%` }}
-            ></div>
-          </div>
-          <div className="text-[10px] text-zinc-500 font-mono">{progress}% COMPLETED</div>
+        <div className="flex md:flex-col items-center justify-center gap-2 px-2">
+          <ArrowRight className="w-5 h-5 text-faint rotate-90 md:rotate-0" aria-hidden="true" />
         </div>
 
-        {/* Target Warehouse DB Box */}
-        <div className="bg-[#141414] p-4 rounded-none border border-[#262626] text-center space-y-2 relative">
-          <div className="mx-auto w-10 h-10 bg-[#0F0F0F] border border-[#262626] text-[#D4AF37] rounded-none flex items-center justify-center">
-            <Database className="w-5 h-5 animate-pulse" />
-          </div>
-          <div className="font-serif italic text-sm text-[#E0E0E0]">Star Schema (dbo.dim_* / fact_sales)</div>
-          <div className="text-[10px] text-zinc-500 font-mono">
-            {isEtlDone && dashboard?.lastEtl ? `3 Dimensions • ${dashboard.lastEtl.rowsLoaded} Fact Rows` : "0 Dimensions • Empty Facts"}
-          </div>
-          <div className="pt-2">
-            <span className={`text-[9px] px-2 py-0.5 rounded-none border uppercase tracking-wider font-mono font-bold ${
-              isEtlDone ? "bg-[#0A0A0A] text-[#D4AF37] border-[#D4AF37]/45" : "bg-[#0A0A0A] text-zinc-650 border-[#262626]"
-            }`}>
-              {isEtlDone ? "Active & Analyzable" : "WAITING FOR PIPELINE"}
-            </span>
+        <div className="rounded-2xl bg-subtle p-4 flex items-start gap-3">
+          <span className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${isEtlDone ? "bg-accent text-white" : "bg-surface text-faint"}`}>
+            <Database className="w-5 h-5" aria-hidden="true" />
+          </span>
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-ink">Star schema</p>
+            <p className="text-xs text-muted font-mono">dbo.dim_* · dbo.fact_sales</p>
+            <p className="text-sm text-muted mt-1">
+              {isEtlDone && dashboard?.lastEtl ? `3 dimensions · ${dashboard.lastEtl.rowsLoaded} fact rows` : "Empty until the first ETL run"}
+            </p>
           </div>
         </div>
       </div>
 
-      {/* ETL step log returned by the server */}
       <div className="space-y-2">
-        <div className="flex items-center justify-between text-xs font-bold text-zinc-400">
-          <span className="flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-wider">
-            <Activity className="w-4 h-4 text-[#D4AF37]" />
-            ETL Execution Log (SQL Server)
-          </span>
-          <span className="font-mono text-[10px] text-zinc-600">SQL SERVER • SalesDW</span>
+        <div className="flex items-center justify-between text-sm">
+          <span className="font-medium text-ink">{STATUS_LABEL[status]}</span>
+          <span className="text-muted tabular-nums">{progress}%</span>
+        </div>
+        <div
+          role="progressbar"
+          aria-label="ETL progress"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={progress}
+          className="h-2 w-full rounded-full bg-line overflow-hidden"
+        >
+          <div
+            className={`h-full rounded-full transition-[width] duration-300 ${status === "completed" ? "bg-emerald-500" : "bg-accent"}`}
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <h3 className="flex items-center gap-2 text-sm font-semibold text-ink">
+            <Activity className="w-4 h-4 text-accent" aria-hidden="true" />
+            Execution log
+          </h3>
+          <span className="text-xs text-muted">SQL Server · SalesDW</span>
         </div>
 
         <div
           ref={logContainerRef}
-          className="bg-[#0A0A0A] p-4 rounded-none border border-[#262626] font-mono text-xs text-zinc-350 space-y-1.5 h-[170px] overflow-y-auto"
+          role="log"
+          aria-live="polite"
+          className="rounded-2xl bg-subtle p-4 font-mono text-xs text-ink space-y-1.5 h-[180px] overflow-y-auto custom-scrollbar"
         >
           {logs.length === 0 ? (
-            <div className="text-zinc-650 flex flex-col items-center justify-center h-full space-y-1">
-              <span className="text-[10px] tracking-widest uppercase text-zinc-600">-- SYSTEM QUIET --</span>
-              <span className="text-[10.5px]">Click "Run ETL" above to load the Star Schema from the source tables.</span>
+            <div className="h-full flex items-center justify-center text-center text-sm text-muted font-sans">
+              Click "Run ETL" to load the star schema from the source tables.
             </div>
           ) : (
             logs.map((log, index) => {
-              let textClass = "text-zinc-300";
-              if (log.includes("EXTRACT")) textClass = "text-amber-500";
-              else if (log.includes("TRANSFORM")) textClass = "text-[#D4AF37]";
-              else if (log.includes("LOAD")) textClass = "text-zinc-400";
-              else if (log.includes("Success") || log.includes("เสร็จสมบูรณ์") || log.includes("TARGET")) textClass = "text-emerald-400 font-bold";
-
+              const tag = LOG_TAGS.find((item) => log.includes(item.match));
               return (
-                <div key={index} className={`flex items-start gap-1 leading-relaxed ${textClass}`}>
-                  <ChevronRight className="w-3.5 h-3.5 flex-shrink-0 mt-0.5 text-zinc-600" />
-                  <span>{log}</span>
+                <div key={index} className="flex items-start gap-2 leading-relaxed">
+                  <ChevronRight className="w-3.5 h-3.5 shrink-0 mt-0.5 text-faint" aria-hidden="true" />
+                  <span className={tag?.className ?? "text-ink"}>{log}</span>
                 </div>
               );
             })
           )}
         </div>
       </div>
-    </div>
+    </section>
   );
 }
 
+const PHASES = [
+  { label: "Extract", detail: "Read source order lines" },
+  { label: "Transform", detail: "Build dimensions and tiers" },
+  { label: "Load", detail: "Write fact_sales" }
+];
+
+const PHASE_INDEX: Partial<Record<EtlStatus, number>> = { extracting: 0, transforming: 1, loading: 2 };
+
+type StepState = "done" | "active" | "pending";
+
+const STEP_BADGE: Record<StepState, string> = {
+  done: "bg-accent text-white",
+  active: "bg-accent-soft text-accent ring-2 ring-accent",
+  pending: "bg-subtle text-faint"
+};
+
+const STATUS_LABEL: Record<EtlStatus, string> = {
+  idle: "Ready to run",
+  extracting: "Extracting source rows…",
+  transforming: "Transforming dimensions…",
+  loading: "Loading fact rows…",
+  completed: "Pipeline complete"
+};
+
+const LOG_TAGS = [
+  { match: "[Extract]", className: "text-amber-800" },
+  { match: "[Transform]", className: "text-accent" },
+  { match: "[Load]", className: "text-emerald-800" },
+  { match: "ERROR", className: "text-red-700 font-semibold" },
+  { match: "Done:", className: "text-emerald-800 font-semibold" }
+];
+
 function SpinnerIcon() {
   return (
-    <svg className="animate-spin h-3 w-3 text-current" fill="none" viewBox="0 0 24 24">
+    <svg className="animate-spin h-4 w-4 text-current" fill="none" viewBox="0 0 24 24" aria-hidden="true">
       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
     </svg>

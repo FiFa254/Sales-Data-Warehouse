@@ -50,7 +50,7 @@ async function request<T>(url: string, body?: unknown): Promise<T> {
 }
 
 export const api = {
-  health: () => request<{ database: string; status: string }>("/api/health"),
+  health: () => request<{ database: string; status: string; assistant: "gemini" | "offline" }>("/api/health"),
   dashboard: () => request<Dashboard>("/api/dashboard"),
   runEtl: () => request<EtlResult>("/api/etl/run", {}),
   sourceOptions: () => request<SourceOptions>("/api/source/options"),

@@ -9,9 +9,12 @@ import { DEFAULT_CONNECTION_STRING } from "./server/db";
 dotenv.config();
 
 const app = express();
+app.disable("x-powered-by");
 app.use(express.json());
 
 const PORT = Number(process.env.PORT) || 3000;
+const HOST = process.env.HOST || "127.0.0.1";
+const MAX_CHAT_HISTORY = 20;
 
 // --- DATABASE (SQL Server, see server/warehouse.ts) ---
 // Default: local SQL Server, Windows login, database SalesDW (created with its tables on first start).
@@ -25,7 +28,7 @@ const handle = (fn: (req: express.Request, res: express.Response) => Promise<unk
 
 app.get("/api/health", handle(async (req, res) => {
   await warehouse.db.query("SELECT 1 AS ok");
-  res.json({ database: "SQL Server", status: "connected" });
+  res.json({ database: "SQL Server", status: "connected", assistant: ai ? "gemini" : "offline" });
 }));
 
 // Dashboard numbers: from the star schema after an ETL run, otherwise straight from the source tables.
@@ -133,7 +136,7 @@ app.post("/api/chat", async (req, res) => {
 
     const contents: any[] = [];
     if (history && Array.isArray(history)) {
-      history.forEach((h: any) => {
+      history.slice(-MAX_CHAT_HISTORY).forEach((h: any) => {
         contents.push({
           role: h.role === 'user' ? 'user' : 'model',
           parts: [{ text: h.content }]
@@ -174,7 +177,7 @@ async function startServer() {
     process.exit(1);
   }
 
-  if (process.env.NODE_ENV !== "production") {
+  if (process.env.NODE_ENV !== "production" && !process.argv[1]?.endsWith("server.cjs")) {
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: "spa",
@@ -195,7 +198,7 @@ async function startServer() {
     res.status(500).json({ error: "Database error. Check the server console." });
   });
 
-  app.listen(PORT, "0.0.0.0", () => {
+  app.listen(PORT, HOST, () => {
     console.log(`Server running on http://localhost:${PORT}`);
   });
 }

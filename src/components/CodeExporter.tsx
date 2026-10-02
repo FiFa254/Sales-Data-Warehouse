@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { FileCode, Copy, Check, Info, FileText, Server, Terminal, HelpCircle } from "lucide-react";
+import { FileCode, Copy, Check, FileText, Server, Terminal, HelpCircle } from "lucide-react";
 import { phpConnectCode, phpEtlCode, phpApiDashboardCode, mysqlSchemaCode } from "../data";
 
 export default function CodeExporter() {
@@ -28,133 +28,101 @@ export default function CodeExporter() {
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 bg-[#141414] p-6 rounded-none border border-[#262626]">
-      {/* File Tree Explorer Menu */}
+    <section className="rounded-[var(--radius-card)] bg-surface shadow-[var(--shadow-card)] p-5 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
       <div className="lg:col-span-4 space-y-4">
-        <div>
-          <h4 className="text-xs font-mono uppercase tracking-[0.15em] text-zinc-400 flex items-center gap-1.5">
-            <FileCode className="w-4 h-4 text-[#D4AF37]" />
-            PHP & MySQL Project Files
-          </h4>
-          <p className="text-xs text-zinc-400 mt-1">
-            Copy these production files directly to host the Star Schema Data Warehouse on your local server environment.
-          </p>
-        </div>
-
-        {/* File Navigator layout */}
-        <div className="bg-[#0A0A0A] p-3 rounded-none border border-[#262626] space-y-1">
-          <div className="text-[9px] uppercase font-bold text-[#D4AF37] tracking-[0.12em] font-mono pl-2 mb-2">📁 project_sales_dw/</div>
-          
-          <button
-            id="tab-select-mysql"
-            onClick={() => setActiveTab("mysql")}
-            className={`w-full flex items-center gap-2.5 p-2.5 rounded-none text-left text-xs transition-all duration-150 cursor-pointer border ${
-              activeTab === "mysql"
-                ? "bg-[#141414] text-[#D4AF37] border-[#D4AF37]/45 font-bold"
-                : "text-zinc-400 hover:bg-[#141414] border-transparent"
-            }`}
-          >
-            <Terminal className="w-4 h-4 shrink-0 text-amber-500" />
-            <div className="flex-1 font-mono">schema_warehouse.sql</div>
-          </button>
-
-          <button
-            id="tab-select-connect"
-            onClick={() => setActiveTab("connect")}
-            className={`w-full flex items-center gap-2.5 p-2.5 rounded-none text-left text-xs transition-all duration-150 cursor-pointer border ${
-              activeTab === "connect"
-                ? "bg-[#141414] text-[#D4AF37] border-[#D4AF37]/45 font-bold"
-                : "text-zinc-400 hover:bg-[#141414] border-transparent"
-            }`}
-          >
-            <FileCode className="w-4 h-4 shrink-0 text-zinc-400" />
-            <div className="flex-1 font-mono">db_connect.php</div>
-          </button>
-
-          <button
-            id="tab-select-etl"
-            onClick={() => setActiveTab("etl")}
-            className={`w-full flex items-center gap-2.5 p-2.5 rounded-none text-left text-xs transition-all duration-150 cursor-pointer border ${
-              activeTab === "etl"
-                ? "bg-[#141414] text-[#D4AF37] border-[#D4AF37]/45 font-bold"
-                : "text-zinc-400 hover:bg-[#141414] border-transparent"
-            }`}
-          >
-            <FileCode className="w-4 h-4 shrink-0 text-[#D4AF37] animate-pulse" />
-            <div className="flex-1 font-mono">etl.php</div>
-          </button>
-
-          <button
-            id="tab-select-api"
-            onClick={() => setActiveTab("api")}
-            className={`w-full flex items-center gap-2.5 p-2.5 rounded-none text-left text-xs transition-all duration-150 cursor-pointer border ${
-              activeTab === "api"
-                ? "bg-[#141414] text-[#D4AF37] border-[#D4AF37]/45 font-bold"
-                : "text-zinc-400 hover:bg-[#141414] border-transparent"
-            }`}
-          >
-            <Server className="w-4 h-4 shrink-0 text-zinc-400" />
-            <div className="flex-1 font-mono">api_dashboard.php</div>
-          </button>
-        </div>
-
-        {/* Theoretical Details Explainer */}
-        <div className="bg-[#0F0F0F] p-4 rounded-none border border-[#262626] space-y-2">
-          <h5 className="text-[11.5px] font-bold text-zinc-300 flex items-center gap-1">
-            <HelpCircle className="w-3.5 h-3.5 text-[#D4AF37]" />
-            File &amp; Architecture Specifications
-          </h5>
-          <div className="text-[11px] text-zinc-400 leading-relaxed space-y-2">
-            {activeTab === "mysql" && (
-              <p>
-                **schema_warehouse.sql**: Prepares the full catalog on MySQL, defining staging areas (OLTP) and OLAP collections (Fact and Dimensions). Includes schema relationships and performance compounds.
-              </p>
-            )}
-            {activeTab === "connect" && (
-              <p>
-                **db_connect.php**: Manages connection details securely via a PHP PDO link, establishing UTF-8 encoding and parameterized sanitization guards (SQL Injection Protection).
-              </p>
-            )}
-            {activeTab === "etl" && (
-              <p>
-                **etl.php**: The central PHP ETL Pipeline workflow. It queries and cleans raw staging entries, computes customer RFM loyalty brackets, formats date surrogate keys, and populates the Fact Sales table.
-              </p>
-            )}
-            {activeTab === "api" && (
-              <p>
-                **api_dashboard.php**: Queries the sales warehouse fact ledger and serves high-performance analytics in nested JSON format to feed dashboards with zero latency.
-              </p>
-            )}
-            <div className="pt-1 text-[10px] text-[#D4AF37] font-mono uppercase tracking-wider font-bold">
-              *These files are cross-compatible and ready for local systems!*
-            </div>
+        <div className="flex items-start gap-3">
+          <span className="w-9 h-9 rounded-full bg-accent-soft text-accent flex items-center justify-center shrink-0">
+            <FileCode className="w-4 h-4" aria-hidden="true" />
+          </span>
+          <div>
+            <h2 className="font-display text-base font-semibold text-ink">PHP &amp; MySQL project files</h2>
+            <p className="text-sm text-muted mt-0.5">Copy these files to host the same star schema warehouse on a PHP + MySQL server.</p>
           </div>
+        </div>
+
+        <div className="rounded-2xl bg-subtle p-2 space-y-1">
+          <p className="px-2 pt-1 pb-2 text-xs font-medium text-muted font-mono">project_sales_dw/</p>
+          {FILES.map((file) => {
+            const selected = activeTab === file.id;
+            return (
+              <button
+                key={file.id}
+                id={`tab-select-${file.id}`}
+                type="button"
+                aria-pressed={selected}
+                onClick={() => setActiveTab(file.id)}
+                className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-left text-sm font-mono transition-colors cursor-pointer ${
+                  selected ? "bg-surface text-accent font-semibold shadow-[var(--shadow-card)]" : "text-muted hover:text-ink hover:bg-surface/70"
+                }`}
+              >
+                <file.icon className="w-4 h-4 shrink-0" aria-hidden="true" />
+                <span className="flex-1 truncate">{file.name}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="rounded-2xl bg-subtle p-4 space-y-2">
+          <h3 className="text-sm font-semibold text-ink flex items-center gap-2">
+            <HelpCircle className="w-4 h-4 text-accent" aria-hidden="true" />
+            About this file
+          </h3>
+          <p className="text-sm text-muted leading-relaxed">
+            <code className="font-mono text-xs text-ink">{current.title}</code> {FILES.find((file) => file.id === activeTab)?.about}
+          </p>
         </div>
       </div>
 
-      {/* Code Viewer Editor view */}
-      <div className="lg:col-span-8 flex flex-col justify-between space-y-3">
-        <div className="bg-[#0A0A0A] rounded-none border border-[#262626] flex-1 flex flex-col overflow-hidden">
-          <div className="bg-[#141414] px-4 py-3 border-b border-[#262626] flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <FileText className="w-4 h-4 text-[#D4AF37]" />
-              <span className="text-xs font-bold text-zinc-300 font-mono">{current.title}</span>
+      <div className="lg:col-span-8 min-w-0">
+        <div className="rounded-2xl bg-[#14161d] flex flex-col overflow-hidden h-full">
+          <div className="px-4 py-3 border-b border-white/10 flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <FileText className="w-4 h-4 text-white/60" aria-hidden="true" />
+              <span className="text-sm font-medium text-white font-mono truncate">{current.title}</span>
             </div>
             <button
               id="btn-copy-code"
+              type="button"
               onClick={handleCopy}
-              className="bg-[#D4AF37] hover:bg-[#F5D061] text-[#0A0A0A] px-3.5 py-1.5 rounded-none text-[11px] tracking-widest uppercase font-mono font-bold flex items-center gap-1.5 hover:scale-101 transition-all duration-150 cursor-pointer"
+              className="inline-flex items-center gap-1.5 rounded-full bg-accent hover:bg-accent-strong text-white px-4 py-1.5 text-sm font-semibold transition-colors cursor-pointer shrink-0"
             >
-              {copied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
-              {copied ? "Copied!" : "Copy Source Code"}
+              {copied ? <Check className="w-3.5 h-3.5" aria-hidden="true" /> : <Copy className="w-3.5 h-3.5" aria-hidden="true" />}
+              {copied ? "Copied" : "Copy code"}
             </button>
           </div>
 
-          <div className="p-4 flex-1 font-mono text-xs text-zinc-350 leading-relaxed min-h-[340px] max-h-[460px] overflow-auto whitespace-pre bg-[#0A0A0A]">
+          <pre className="p-4 flex-1 font-mono text-[13px] text-[#e6e8ef] leading-relaxed min-h-[340px] max-h-[520px] overflow-auto custom-scrollbar">
             {current.code}
-          </div>
+          </pre>
         </div>
       </div>
-    </div>
+    </section>
   );
 }
+
+const FILES = [
+  {
+    id: "mysql",
+    name: "schema_warehouse.sql",
+    icon: Terminal,
+    about: "creates the MySQL catalog: the staging (OLTP) tables, the fact and dimension tables, their keys and indexes."
+  },
+  {
+    id: "connect",
+    name: "db_connect.php",
+    icon: FileCode,
+    about: "opens a PDO connection with UTF-8 and prepared statements, so queries are safe from SQL injection."
+  },
+  {
+    id: "etl",
+    name: "etl.php",
+    icon: FileCode,
+    about: "is the ETL job: it cleans staging rows, computes customer loyalty tiers, builds date keys and fills fact_sales."
+  },
+  {
+    id: "api",
+    name: "api_dashboard.php",
+    icon: Server,
+    about: "reads the fact table and returns the dashboard numbers as JSON."
+  }
+] as const;

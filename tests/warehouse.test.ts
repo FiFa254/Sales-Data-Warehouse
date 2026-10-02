@@ -182,6 +182,7 @@ describe('SQL playground', () => {
       'SELECT 1; DROP TABLE dbo.fact_sales',
       'SELECT * INTO copy_table FROM fact_sales',
       'EXEC sp_who',
+      'SELECT 1 SET ROWCOUNT 0 SELECT * FROM fact_sales',
       'WITH x AS (SELECT 1 AS a) DELETE FROM fact_sales',
       '   ',
     ]) {
