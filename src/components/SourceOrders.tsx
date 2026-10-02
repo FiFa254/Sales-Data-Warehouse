@@ -99,29 +99,32 @@ export default function SourceOrders({ onChanged }: SourceOrdersProps) {
     });
   };
 
-  const field = "w-full bg-subtle border border-line text-ink text-xs px-3 py-2 rounded-xl outline-none focus:border-accent/60";
-  const label = "space-y-1 text-[10px] uppercase tracking-wider text-muted font-mono";
-  const secondaryButton = "flex items-center gap-1.5 px-3 py-2 text-[10px] font-mono uppercase tracking-wider border border-line text-muted hover:text-ink hover:bg-subtle disabled:opacity-50 cursor-pointer shrink-0";
-  const primaryButton = "flex items-center justify-center gap-2 bg-accent hover:bg-accent-strong text-white text-[11px] font-bold px-4 py-2.5 rounded-xl uppercase font-mono disabled:opacity-50 cursor-pointer";
+  const field = "w-full bg-subtle border border-transparent text-ink text-sm px-3.5 py-2.5 rounded-xl outline-none transition-colors focus:border-accent focus:bg-surface disabled:opacity-60";
+  const label = "flex flex-col gap-1.5 text-xs font-medium text-muted";
+  const secondaryButton = "inline-flex items-center justify-center gap-1.5 rounded-full border border-line px-3.5 py-2 text-sm font-medium text-ink hover:bg-subtle disabled:opacity-50 cursor-pointer shrink-0 transition-colors";
+  const dangerButton = "inline-flex items-center justify-center gap-1.5 rounded-full border border-red-200 px-3.5 py-2 text-sm font-medium text-red-700 hover:bg-red-50 disabled:opacity-50 cursor-pointer shrink-0 transition-colors";
+  const primaryButton = "inline-flex items-center justify-center gap-2 rounded-full bg-accent hover:bg-accent-strong text-white text-sm font-semibold px-5 py-2.5 disabled:opacity-50 cursor-pointer transition-colors";
 
   return (
-    <div className="bg-surface p-6 rounded-xl border border-line space-y-6">
+    <section className="rounded-[var(--radius-card)] bg-surface shadow-[var(--shadow-card)] p-5 sm:p-6 space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
-        <div>
-          <h3 className="text-base font-display font-semibold text-accent tracking-wider flex items-center gap-2">
-            <ShoppingCart className="w-5 h-5" />
-            Source System (schema oltp)
-          </h3>
-          <p className="text-xs text-muted mt-1">
-            Add customers, products and orders, then run the ETL above to see them on the dashboard.
-          </p>
+        <div className="flex items-start gap-3 min-w-0">
+          <span className="w-9 h-9 rounded-full bg-accent-soft text-accent flex items-center justify-center shrink-0">
+            <ShoppingCart className="w-4 h-4" aria-hidden="true" />
+          </span>
+          <div className="min-w-0">
+            <h2 className="font-display text-base font-semibold text-ink">Source system <span className="font-mono text-sm font-normal text-muted">oltp</span></h2>
+            <p className="text-sm text-muted mt-0.5">
+              Add customers, products and orders, then run the ETL above to see them on the dashboard.
+            </p>
+          </div>
         </div>
-        <div className="flex gap-2 shrink-0">
+        <div className="flex flex-wrap gap-2 shrink-0">
           <button type="button" onClick={loadDemo} disabled={busy} className={secondaryButton}>
             <Database className="w-3.5 h-3.5" />
             Load demo data
           </button>
-          <button type="button" onClick={clearAll} disabled={busy} className={secondaryButton}>
+          <button type="button" onClick={clearAll} disabled={busy} className={dangerButton}>
             <Trash2 className="w-3.5 h-3.5" />
             Clear all data
           </button>
@@ -129,7 +132,7 @@ export default function SourceOrders({ onChanged }: SourceOrdersProps) {
       </div>
 
       {options && !hasMasterData && (
-        <p className="text-[11px] text-amber-800 font-mono">
+        <p className="rounded-xl bg-amber-50 border border-amber-200 px-3.5 py-2 text-sm text-amber-800">
           No {options.customers.length === 0 ? "customers" : "products"} yet. Add them below before recording an order.
         </p>
       )}
@@ -170,9 +173,9 @@ export default function SourceOrders({ onChanged }: SourceOrdersProps) {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 border-t border-line pt-5">
         <form onSubmit={saveCustomer} className="space-y-3">
-          <h4 className="text-xs font-mono uppercase tracking-wider text-ink flex items-center gap-1.5">
-            <UserPlus className="w-4 h-4 text-accent" /> New customer
-          </h4>
+          <h3 className="text-sm font-semibold text-ink flex items-center gap-2">
+            <UserPlus className="w-4 h-4 text-accent" aria-hidden="true" /> New customer
+          </h3>
           <div className="grid grid-cols-2 gap-3">
             <label className={label}>Name<input className={field} value={customer.name} maxLength={100} required
               onChange={(e) => setCustomer({ ...customer, name: e.target.value })} /></label>
@@ -189,9 +192,9 @@ export default function SourceOrders({ onChanged }: SourceOrdersProps) {
         </form>
 
         <form onSubmit={saveProduct} className="space-y-3">
-          <h4 className="text-xs font-mono uppercase tracking-wider text-ink flex items-center gap-1.5">
-            <PackagePlus className="w-4 h-4 text-accent" /> New product
-          </h4>
+          <h3 className="text-sm font-semibold text-ink flex items-center gap-2">
+            <PackagePlus className="w-4 h-4 text-accent" aria-hidden="true" /> New product
+          </h3>
           <div className="grid grid-cols-2 gap-3">
             <label className={label}>Name<input className={field} value={product.name} maxLength={200} required
               onChange={(e) => setProduct({ ...product, name: e.target.value })} /></label>
@@ -209,10 +212,10 @@ export default function SourceOrders({ onChanged }: SourceOrdersProps) {
       </div>
 
       {message && (
-        <p className={`text-[11px] font-mono ${message.ok ? "text-emerald-700" : "text-red-700"}`} role="status">
+        <p className={`rounded-xl px-3.5 py-2 text-sm ${message.ok ? "bg-emerald-50 text-emerald-800" : "bg-red-50 text-red-800"}`} role="status">
           {message.text}
         </p>
       )}
-    </div>
+    </section>
   );
 }
