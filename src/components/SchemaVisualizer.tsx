@@ -213,7 +213,7 @@ export default function SchemaVisualizer() {
                       onClick={() => setSelectedTable("dim_customers")}
                       className={`w-full p-3 rounded-xl border text-left transition-all duration-150 cursor-pointer ${
                         selectedTable === "dim_customers"
-                          ? "bg-surface border-l-2 border-accent text-ink"
+                          ? "bg-surface border-accent text-ink"
                           : "bg-subtle border-line hover:border-line-strong hover:bg-surface"
                       }`}
                     >
@@ -222,7 +222,6 @@ export default function SchemaVisualizer() {
                           <Table className="w-3.5 h-3.5 text-accent" />
                           Dimension
                         </span>
-                        <span className="bg-subtle text-accent border border-line text-[10px] px-1.5 py-0.5 rounded-full font-sans font-bold">CUSTOMERS</span>
                       </div>
                       <div className="text-xs font-bold text-ink font-mono">dim_customers</div>
                       <div className="text-[9.5px] text-muted line-clamp-1 mt-1">Slices sales via user RFM Loyalty Tiers</div>
@@ -233,7 +232,7 @@ export default function SchemaVisualizer() {
                       onClick={() => setSelectedTable("dim_products")}
                       className={`w-full p-3 rounded-xl border text-left transition-all duration-150 cursor-pointer ${
                         selectedTable === "dim_products"
-                          ? "bg-surface border-l-2 border-accent text-ink"
+                          ? "bg-surface border-accent text-ink"
                           : "bg-subtle border-line hover:border-line-strong hover:bg-surface"
                       }`}
                     >
@@ -242,7 +241,6 @@ export default function SchemaVisualizer() {
                           <Table className="w-3.5 h-3.5 text-accent" />
                           Dimension
                         </span>
-                        <span className="bg-subtle text-accent border border-line text-[10px] px-1.5 py-0.5 rounded-full font-sans font-bold">PRODUCTS</span>
                       </div>
                       <div className="text-xs font-bold text-ink font-mono">dim_products</div>
                       <div className="text-[9.5px] text-muted line-clamp-1 mt-1">Enables inventory & profit margin analysis</div>
@@ -252,12 +250,8 @@ export default function SchemaVisualizer() {
                   {/* Fact Table in the Center */}
                   <div className="col-span-4 flex flex-col items-center">
                     {/* Visual Connector lines helper */}
-                    <div className="flex items-center gap-2 mb-2 w-full justify-between px-3 text-[9px] text-accent/60 font-mono uppercase tracking-wider">
-                      <span>FK Key</span>
-                      <span className="flex-1 border-b border-dashed border-line mx-1"></span>
-                      <span>Star Schema</span>
-                      <span className="flex-1 border-b border-dashed border-line mx-1"></span>
-                      <span>FK Key</span>
+                    <div className="mb-2 w-full px-3" aria-hidden="true">
+                      <span className="block border-b border-dashed border-line"></span>
                     </div>
 
                     <button
@@ -274,7 +268,6 @@ export default function SchemaVisualizer() {
                           <Layers className="w-3.5 h-3.5 text-accent" />
                           Fact Table
                         </span>
-                        <span className="bg-surface text-accent border border-line text-[10px] px-1.5 py-0.5 rounded-full">MEASURES</span>
                       </div>
                       <div className="text-xs font-bold text-ink font-mono tracking-wider text-center border-b border-line pb-2 mb-2">
                         fact_sales
@@ -303,7 +296,6 @@ export default function SchemaVisualizer() {
                           <Table className="w-3.5 h-3.5 text-accent" />
                           Dimension
                         </span>
-                        <span className="bg-subtle text-accent border border-line text-[10px] px-1.5 py-0.5 rounded-full font-sans font-bold">TIME</span>
                       </div>
                       <div className="text-xs font-bold text-ink font-mono">dim_time</div>
                       <div className="text-[9.5px] text-muted line-clamp-2 mt-1">Calendar dimension avoiding expensive runtime string-to-date queries.</div>
