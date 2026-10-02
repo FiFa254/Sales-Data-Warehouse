@@ -7,9 +7,11 @@ import {
   Terminal,
   FileCode,
   AlertCircle,
+  CheckCircle2,
   Award,
   BookOpen,
-  ArrowRight
+  ArrowRight,
+  type LucideIcon
 } from "lucide-react";
 import {
   AreaChart,
@@ -32,8 +34,77 @@ import WebChat from "./components/WebChat";
 import SourceOrders from "./components/SourceOrders";
 import { api, Dashboard, money } from "./api";
 
+type TabId = "dashboard" | "etl" | "schema" | "queries" | "code";
+
+const TABS: { id: TabId; label: string; icon: LucideIcon }[] = [
+  { id: "dashboard", label: "Overview", icon: TrendingUp },
+  { id: "etl", label: "ETL Pipeline", icon: Server },
+  { id: "schema", label: "Star Schema", icon: Layers },
+  { id: "queries", label: "SQL Playground", icon: Terminal },
+  { id: "code", label: "PHP & MySQL", icon: FileCode }
+];
+
+const BANNER_TONES = {
+  warning: { box: "bg-amber-50 border-amber-200", icon: "bg-amber-100 text-amber-800", Icon: AlertCircle },
+  success: { box: "bg-emerald-50 border-emerald-200", icon: "bg-emerald-100 text-emerald-800", Icon: CheckCircle2 }
+};
+
+function StatusBanner({
+  tone,
+  title,
+  children,
+  actionLabel,
+  onAction
+}: {
+  tone: keyof typeof BANNER_TONES;
+  title: string;
+  children: React.ReactNode;
+  actionLabel?: string;
+  onAction?: () => void;
+}) {
+  const { box, icon, Icon } = BANNER_TONES[tone];
+  return (
+    <div className={`flex flex-col sm:flex-row sm:items-center gap-4 rounded-2xl border px-5 py-4 ${box}`}>
+      <div className="flex items-start gap-3 flex-1 min-w-0">
+        <span className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 ${icon}`}>
+          <Icon className="w-4.5 h-4.5" aria-hidden="true" />
+        </span>
+        <div className="min-w-0">
+          <p className="text-sm font-semibold text-ink">{title}</p>
+          <p className="text-sm text-muted mt-0.5 leading-relaxed">{children}</p>
+        </div>
+      </div>
+      {actionLabel && onAction && (
+        <button
+          type="button"
+          onClick={onAction}
+          className="inline-flex items-center justify-center gap-1.5 rounded-full bg-accent hover:bg-accent-strong text-white text-sm font-semibold px-4 py-2 shrink-0 transition-colors cursor-pointer"
+        >
+          {actionLabel}
+          <ArrowRight className="w-4 h-4" aria-hidden="true" />
+        </button>
+      )}
+    </div>
+  );
+}
+
 export default function App() {
-  const [activeTab, setActiveTab] = useState<"dashboard" | "etl" | "schema" | "queries" | "code">("dashboard");
+  const [activeTab, setActiveTab] = useState<TabId>("dashboard");
+
+  const handleTabKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    const index = TABS.findIndex((tab) => tab.id === activeTab);
+    const targets: Record<string, number> = {
+      ArrowRight: (index + 1) % TABS.length,
+      ArrowLeft: (index - 1 + TABS.length) % TABS.length,
+      Home: 0,
+      End: TABS.length - 1
+    };
+    const next = targets[event.key];
+    if (next === undefined) return;
+    event.preventDefault();
+    setActiveTab(TABS[next].id);
+    document.getElementById(`tab-${TABS[next].id}`)?.focus();
+  };
   const [dashboard, setDashboard] = useState<Dashboard | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
 
@@ -99,88 +170,75 @@ export default function App() {
         <div className="lg:col-span-8 space-y-6 flex flex-col">
           
           {loadError && (
-            <div className="bg-surface border border-red-200 p-5 rounded-xl text-[11px] text-red-700 font-mono">
-              Cannot load data from SQL Server: {loadError}
+            <div role="alert" className="flex items-start gap-3 rounded-2xl bg-red-50 border border-red-200 px-5 py-4 text-sm text-red-800">
+              <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" aria-hidden="true" />
+              <p>Cannot load data from SQL Server: {loadError}</p>
             </div>
           )}
 
-          {/* Quick Notice Banner if ETL not run yet */}
           {dashboard && !isEtlDone && (
-            <div className="bg-surface border border-amber-200 p-5 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div className="flex items-start gap-3">
-                <AlertCircle className="w-5 h-5 text-accent shrink-0 mt-0.5" />
-                <div>
-                  <h4 className="text-xs font-display font-semibold text-amber-800 uppercase tracking-wider">Warehouse Database Not Loaded (OLAP Data Empty)</h4>
-                  <p className="text-[11px] text-muted mt-1 leading-relaxed">
-                    The dashboard is reading the source tables (OLTP) directly. Open the "ETL Pipeline" tab and run the ETL to build the Star Schema in SQL Server.
-                  </p>
-                </div>
-              </div>
-              <button
-                onClick={() => setActiveTab("etl")}
-                className="bg-accent hover:bg-accent-strong text-white text-[11px] font-bold px-4 py-2 rounded-xl shrink-0 flex items-center gap-1.5 transition-all duration-150 cursor-pointer font-mono uppercase"
-              >
-                Execute ETL Now
-                <ArrowRight className="w-3.5 h-3.5" />
-              </button>
-            </div>
+            <StatusBanner
+              tone="warning"
+              title="The warehouse is not loaded yet"
+              actionLabel="Run the ETL"
+              onAction={() => setActiveTab("etl")}
+            >
+              The dashboard is reading the source (OLTP) tables directly. Run the ETL to build the star schema in SQL Server.
+            </StatusBanner>
           )}
 
           {isEtlDone && pendingOrders > 0 && (
-            <div className="bg-surface border border-amber-200 p-5 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <p className="text-[11px] text-ink leading-relaxed">
-                <span className="text-amber-800 font-bold">{pendingOrders} new source order{pendingOrders > 1 ? "s" : ""}</span> not in the warehouse yet. Run the ETL again to load them.
-              </p>
-              <button
-                onClick={() => setActiveTab("etl")}
-                className="bg-accent hover:bg-accent-strong text-white text-[11px] font-bold px-4 py-2 rounded-xl shrink-0 flex items-center gap-1.5 cursor-pointer font-mono uppercase"
-              >
-                Run ETL
-                <ArrowRight className="w-3.5 h-3.5" />
-              </button>
-            </div>
+            <StatusBanner
+              tone="warning"
+              title={`${pendingOrders} new source order${pendingOrders > 1 ? "s" : ""} not in the warehouse`}
+              actionLabel="Run ETL again"
+              onAction={() => setActiveTab("etl")}
+            >
+              Run the ETL again to load them into the star schema.
+            </StatusBanner>
           )}
 
           {isEtlDone && pendingOrders === 0 && (
-            <div className="bg-surface border border-emerald-200 p-5 rounded-xl flex items-center gap-4">
-              <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-700 shrink-0">
-                <Award className="w-5 h-5 text-accent" />
-              </div>
-              <div>
-                <h4 className="text-xs font-display font-semibold text-accent uppercase tracking-wider">Warehouse & ETL Scripts Ready!</h4>
-                <p className="text-[11px] text-muted mt-0.5 leading-relaxed">
-                  The dashboard is reading the Star Schema in SQL Server{dashboard?.lastEtl ? ` (last ETL: ${new Date(dashboard.lastEtl.finishedAt).toLocaleString()}, ${dashboard.lastEtl.rowsLoaded} fact rows in ${dashboard.lastEtl.durationMs} ms)` : ""}. Run live queries in the SQL Playground.
-                </p>
-              </div>
-            </div>
+            <StatusBanner tone="success" title="Warehouse is up to date">
+              Reading the star schema in SQL Server
+              {dashboard?.lastEtl
+                ? ` · last ETL ${new Date(dashboard.lastEtl.finishedAt).toLocaleString()}, ${dashboard.lastEtl.rowsLoaded} fact rows in ${dashboard.lastEtl.durationMs} ms`
+                : ""}
+              .
+            </StatusBanner>
           )}
 
-          {/* Tab Navigation buttons */}
-          <div className="flex flex-wrap gap-1.5 border-b border-line pb-2">
-            {[
-              { id: "dashboard", label: "📊 Overview Dashboard", icon: TrendingUp },
-              { id: "etl", label: "🔄 ETL Pipeline", icon: Server },
-              { id: "schema", label: "🛠️ Star Schema", icon: Layers },
-              { id: "queries", label: "💻 SQL Playground", icon: Terminal },
-              { id: "code", label: "💾 PHP & MySQL Reference", icon: FileCode }
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id as any)}
-                className={`flex items-center gap-2.5 px-4 py-3 rounded-xl text-xs font-medium transition-all duration-150 border cursor-pointer ${
-                  activeTab === tab.id
-                    ? "bg-surface border-l-2 border-accent text-accent border-t-line border-r-line border-b-line"
-                    : "bg-subtle hover:bg-surface border-line text-muted hover:text-ink"
-                }`}
-              >
-                <tab.icon className="w-3.5 h-3.5" />
-                {tab.label}
-              </button>
-            ))}
+          <div
+            role="tablist"
+            aria-label="Warehouse views"
+            onKeyDown={handleTabKeyDown}
+            className="flex gap-1 overflow-x-auto rounded-full bg-surface border border-line p-1 shadow-[var(--shadow-card)] self-start max-w-full custom-scrollbar"
+          >
+            {TABS.map((tab) => {
+              const selected = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  id={`tab-${tab.id}`}
+                  type="button"
+                  role="tab"
+                  aria-selected={selected}
+                  aria-controls="tab-panel"
+                  tabIndex={selected ? 0 : -1}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex items-center gap-2 whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium transition-colors cursor-pointer ${
+                    selected ? "bg-accent text-white" : "text-muted hover:text-ink hover:bg-subtle"
+                  }`}
+                >
+                  <tab.icon className="w-4 h-4" aria-hidden="true" />
+                  {tab.label}
+                </button>
+              );
+            })}
           </div>
 
           {/* TAB CONTENTS RENDER */}
-          <div className="flex-1">
+          <div id="tab-panel" role="tabpanel" aria-labelledby={`tab-${activeTab}`} className="flex-1">
             {activeTab === "dashboard" && (
               <div className="space-y-6">
                 
