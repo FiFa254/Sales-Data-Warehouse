@@ -116,7 +116,7 @@ export default function SourceOrders({ onChanged }: SourceOrdersProps) {
             Add customers, products and orders, then run the ETL above to see them on the dashboard.
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 shrink-0">
           <button type="button" onClick={loadDemo} disabled={busy} className={secondaryButton}>
             <Database className="w-3.5 h-3.5" />
             Load demo data
