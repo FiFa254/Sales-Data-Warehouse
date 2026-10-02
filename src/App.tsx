@@ -26,7 +26,9 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  Legend
+  Legend,
+  Cell,
+  LabelList
 } from "recharts";
 
 import SchemaVisualizer from "./components/SchemaVisualizer";
@@ -91,6 +93,72 @@ function StatusBanner({
   );
 }
 
+const CHART = {
+  revenue: "#2f5bea",
+  profit: "#d2601a",
+  barMuted: "#b7c7f8",
+  grid: "#e3e6ee",
+  axis: "#656b7d",
+  label: "#12141a"
+};
+
+const TOOLTIP_STYLE: React.CSSProperties = {
+  backgroundColor: "#ffffff",
+  border: "1px solid #e3e6ee",
+  borderRadius: 12,
+  boxShadow: "0 8px 24px -12px rgb(18 20 26 / 0.2)",
+  color: "#12141a",
+  fontSize: 12
+};
+
+const ACTIVE_DOT = { r: 5, strokeWidth: 2, stroke: "#ffffff" };
+
+const compactMoney = (value: number) => (Math.abs(value) >= 1000 ? `$${Math.round(value / 1000)}k` : `$${value}`);
+
+const PRINCIPLES = [
+  {
+    title: "Why a star schema?",
+    body: "By normalizing data into simpler dimensions surrounding a central fact table, analytics queries require far fewer multi-table JOINs, slashing database processing loads by up to 80%."
+  },
+  {
+    title: "PHP ETL pipeline",
+    body: "The custom script extracts raw transactions from the staging database, maps customer loyalty rankings dynamically using aggregated RFM attributes, and loads cleanly into central fact tables."
+  },
+  {
+    title: "Database indexes",
+    body: "B-Tree indexing is systematically configured on dimension relationships. This guarantees sub-millisecond query responses even as transactional ledger indexes scale to millions of orders."
+  }
+];
+
+function Panel({
+  title,
+  subtitle,
+  icon: Icon,
+  className = "",
+  children
+}: {
+  title: string;
+  subtitle?: string;
+  icon: LucideIcon;
+  className?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className={`rounded-[var(--radius-card)] bg-surface shadow-[var(--shadow-card)] p-5 sm:p-6 ${className}`}>
+      <div className="flex items-start gap-3">
+        <span className="w-9 h-9 rounded-full bg-accent-soft text-accent flex items-center justify-center shrink-0">
+          <Icon className="w-4 h-4" aria-hidden="true" />
+        </span>
+        <div className="min-w-0">
+          <h2 className="font-display text-base font-semibold text-ink">{title}</h2>
+          {subtitle && <p className="text-sm text-muted mt-0.5">{subtitle}</p>}
+        </div>
+      </div>
+      {children}
+    </section>
+  );
+}
+
 export default function App() {
   const [activeTab, setActiveTab] = useState<TabId>("dashboard");
 
@@ -132,6 +200,7 @@ export default function App() {
   const trendData = dashboard?.trend ?? [];
   const tierData = dashboard?.tiers ?? [];
   const categoryPerformance = dashboard?.categories ?? [];
+  const topTierSpend = Math.max(0, ...tierData.map((tier) => tier.Spending));
 
   const handleEtlComplete = () => {
     refresh();
@@ -307,149 +376,127 @@ export default function App() {
                 </div>
 
                 {/* 2. Analytical Graphs sections */}
-                <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-                  
-                  {/* Revenue vs Profit Time Series Monthly Trends */}
-                  <div className="md:col-span-12 lg:col-span-7 bg-surface p-6 rounded-xl border border-line flex flex-col justify-between">
-                    <div>
-                      <h4 className="text-xs uppercase font-display font-semibold tracking-wider text-accent flex items-center gap-1.5">
-                        <TrendingUp className="w-4 h-4 text-accent" />
-                        Monthly Sales and Profit Trends
-                      </h4>
-                      <p className="text-[10.5px] text-muted mt-1 leading-relaxed">
-                        {isEtlDone ? "From fact_sales joined to dim_time in the Star Schema" : "From the source order tables (run the ETL to use the Star Schema)"}
-                      </p>
-                    </div>
-
-                    <div className="h-[210px] w-full mt-4">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+                  <Panel
+                    className="lg:col-span-7"
+                    icon={TrendingUp}
+                    title="Monthly sales and profit"
+                    subtitle={isEtlDone ? "fact_sales joined to dim_time in the star schema" : "Source order tables · run the ETL to use the star schema"}
+                  >
+                    <div className="h-[240px] w-full mt-4">
                       <ResponsiveContainer width="100%" height="100%">
-                        <AreaChart data={trendData} margin={{ top: 5, right: 5, left: -25, bottom: 0 }}>
+                        <AreaChart data={trendData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
                           <defs>
-                            <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="5%" stopColor="#D4AF37" stopOpacity={0.25}/>
-                              <stop offset="95%" stopColor="#D4AF37" stopOpacity={0}/>
-                            </linearGradient>
-                            <linearGradient id="colorProf" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="5%" stopColor="#A3A3A3" stopOpacity={0.2}/>
-                              <stop offset="95%" stopColor="#A3A3A3" stopOpacity={0}/>
+                            <linearGradient id="fillRevenue" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="0%" stopColor={CHART.revenue} stopOpacity={0.18} />
+                              <stop offset="100%" stopColor={CHART.revenue} stopOpacity={0} />
                             </linearGradient>
                           </defs>
-                          <CartesianGrid strokeDasharray="3 3" stroke="#262626" />
-                          <XAxis dataKey="month" stroke="#737373" fontSize={10} tickLine={false} />
-                          <YAxis stroke="#737373" fontSize={10} tickLine={false} />
-                          <Tooltip contentStyle={{ backgroundColor: "#0A0A0A", borderColor: "#262626", color: "#E0E0E0" }} />
-                          <Legend wrapperStyle={{ fontSize: 10, marginTop: 5 }} />
-                          <Area type="monotone" dataKey="Revenue" stroke="#D4AF37" strokeWidth={2} fillOpacity={1} fill="url(#colorRev)" name="Revenue Summary" />
-                          <Area type="monotone" dataKey="Profit" stroke="#A3A3A3" strokeWidth={1.5} fillOpacity={1} fill="url(#colorProf)" name="Net Profit Stats" />
+                          <CartesianGrid vertical={false} stroke={CHART.grid} />
+                          <XAxis dataKey="month" axisLine={false} tickLine={false} interval={0} padding={{ left: 12, right: 12 }} tick={{ fill: CHART.axis, fontSize: 12 }} tickFormatter={(month: string) => month.slice(0, 3)} />
+                          <YAxis axisLine={false} tickLine={false} width={48} tick={{ fill: CHART.axis, fontSize: 12 }} tickFormatter={compactMoney} />
+                          <Tooltip
+                            cursor={{ stroke: CHART.axis, strokeWidth: 1 }}
+                            contentStyle={TOOLTIP_STYLE}
+                            formatter={(value: number) => money(value)}
+                          />
+                          <Legend verticalAlign="top" align="right" iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 12, paddingBottom: 8 }} />
+                          <Area type="monotone" dataKey="Revenue" name="Revenue" stroke={CHART.revenue} strokeWidth={2} fill="url(#fillRevenue)" activeDot={ACTIVE_DOT} />
+                          <Area type="monotone" dataKey="Profit" name="Profit" stroke={CHART.profit} strokeWidth={2} fill="transparent" activeDot={ACTIVE_DOT} />
                         </AreaChart>
                       </ResponsiveContainer>
                     </div>
-                  </div>
+                    <table className="sr-only">
+                      <caption>Monthly revenue and profit</caption>
+                      <thead><tr><th scope="col">Month</th><th scope="col">Revenue</th><th scope="col">Profit</th></tr></thead>
+                      <tbody>
+                        {trendData.map((row) => (
+                          <tr key={row.month}><th scope="row">{row.month}</th><td>{money(row.Revenue)}</td><td>{money(row.Profit)}</td></tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </Panel>
 
-                  {/* Loyalty Grouping - Customers Tiers Value Metrics */}
-                  <div className="md:col-span-12 lg:col-span-5 bg-surface p-6 rounded-xl border border-line flex flex-col justify-between">
-                    <div>
-                      <h4 className="text-xs uppercase font-display font-semibold tracking-wider text-accent flex items-center gap-1.5">
-                        <Award className="w-4 h-4 text-accent" />
-                        Customer Loyalty Tiers (AOV Profile)
-                      </h4>
-                      <p className="text-[10.5px] text-muted mt-1">
-                        {isEtlDone ? "Lifetime spend per tier from dim_customers (tiers computed by the ETL)" : "Tiers are computed by the ETL - run it to fill this chart"}
-                      </p>
-                    </div>
-
-                    <div className="h-[210px] w-full mt-4">
+                  <Panel
+                    className="lg:col-span-5"
+                    icon={Award}
+                    title="Spend by loyalty tier"
+                    subtitle={isEtlDone ? "Lifetime spend per tier from dim_customers" : "Tiers are computed by the ETL · run it to fill this chart"}
+                  >
+                    <div className="h-[240px] w-full mt-4">
                       <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={tierData} margin={{ top: 5, right: 5, left: -25, bottom: 0 }}>
-                          <CartesianGrid strokeDasharray="3 3" stroke="#262626" />
-                          <XAxis dataKey="name" stroke="#737373" fontSize={10} tickLine={false} />
-                          <YAxis stroke="#737373" fontSize={10} tickLine={false} />
-                          <Tooltip contentStyle={{ backgroundColor: "#0A0A0A", borderColor: "#262626", color: "#E0E0E0" }} />
-                          <Bar dataKey="Spending" fill="#D4AF37" fillOpacity={0.8} radius={[0, 0, 0, 0]} name="Total Spend" />
+                        <BarChart data={tierData} margin={{ top: 24, right: 8, left: 0, bottom: 0 }}>
+                          <CartesianGrid vertical={false} stroke={CHART.grid} />
+                          <XAxis dataKey="name" axisLine={false} tickLine={false} interval={0} tick={{ fill: CHART.axis, fontSize: 12 }} />
+                          <YAxis axisLine={false} tickLine={false} width={48} tick={{ fill: CHART.axis, fontSize: 12 }} tickFormatter={compactMoney} />
+                          <Tooltip cursor={{ fill: CHART.grid, opacity: 0.5 }} contentStyle={TOOLTIP_STYLE} formatter={(value: number) => money(value)} />
+                          <Bar dataKey="Spending" name="Total spend" barSize={24} radius={[4, 4, 0, 0]}>
+                            {tierData.map((tier) => (
+                              <Cell key={tier.name} fill={tier.Spending === topTierSpend ? CHART.revenue : CHART.barMuted} />
+                            ))}
+                            <LabelList dataKey="Spending" position="top" formatter={compactMoney} style={{ fill: CHART.label, fontSize: 12, fontWeight: 600 }} />
+                          </Bar>
                         </BarChart>
                       </ResponsiveContainer>
                     </div>
-                  </div>
+                    <table className="sr-only">
+                      <caption>Lifetime spend by loyalty tier</caption>
+                      <thead><tr><th scope="col">Tier</th><th scope="col">Spend</th><th scope="col">Customers</th></tr></thead>
+                      <tbody>
+                        {tierData.map((tier) => (
+                          <tr key={tier.name}><th scope="row">{tier.name}</th><td>{money(tier.Spending)}</td><td>{tier.Customers}</td></tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </Panel>
                 </div>
 
                 {/* 3. Category performance list */}
-                <div className="bg-surface p-6 rounded-xl border border-line space-y-4">
-                  <div>
-                    <h4 className="text-xs uppercase font-display font-semibold tracking-wider text-accent flex items-center gap-1.5">
-                      <Layers className="w-4 h-4 text-accent" />
-                      Product Category Performance
-                    </h4>
-                    <p className="text-[10.5px] text-muted mt-0.5">
-                      Deep dive into revenues and profit margins using dimensional slices from the Product Dimension table
-                    </p>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {categoryPerformance.map((cat, idx) => {
-                      const percent = cat.sales > 0 ? ((cat.Profit / cat.sales) * 100).toFixed(1) : "0";
+                <Panel icon={Layers} title="Category performance" subtitle="Revenue and profit margin by product category from dim_products">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-4">
+                    {categoryPerformance.map((cat) => {
+                      const percent = cat.sales > 0 ? (cat.Profit / cat.sales) * 100 : 0;
                       return (
-                        <div key={idx} className="bg-subtle p-4 rounded-xl border border-line space-y-3">
-                          <div className="flex items-center justify-between text-xs font-bold text-ink">
-                            <span>{cat.name}</span>
-                            <span className="text-[10px] text-accent px-1.5 py-0.2 bg-surface border border-line rounded-xl font-mono">
-                              {percent}% margin
+                        <div key={cat.name} className="rounded-2xl bg-subtle p-4 flex flex-col gap-3">
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <span className="text-sm font-semibold text-ink">{cat.name}</span>
+                            <span className="rounded-full bg-accent-soft text-accent text-xs font-semibold px-2.5 py-0.5 tabular-nums shrink-0">
+                              {percent.toFixed(1)}% margin
                             </span>
                           </div>
-                          
-                          <div className="space-y-1.5">
-                            <div className="flex justify-between text-[11px] text-muted font-mono">
-                              <span>Revenues:</span>
-                              <span className="font-bold text-ink">{money(cat.sales)}</span>
+                          <dl className="grid grid-cols-2 gap-2 text-sm">
+                            <div>
+                              <dt className="text-xs text-muted">Revenue</dt>
+                              <dd className="font-semibold text-ink tabular-nums">{money(cat.sales)}</dd>
                             </div>
-                            <div className="flex justify-between text-[11px] text-muted font-mono">
-                              <span>Net Profit:</span>
-                              <span className="font-bold text-accent">{money(cat.Profit)}</span>
+                            <div>
+                              <dt className="text-xs text-muted">Net profit</dt>
+                              <dd className="font-semibold text-ink tabular-nums">{money(cat.Profit)}</dd>
                             </div>
-                          </div>
-
-                          <div className="space-y-1 mt-2">
-                            <div className="w-full bg-line h-1.5">
-                              <div 
-                                className="bg-accent h-full transition-all duration-500" 
-                                style={{ width: `${percent}%` }}
-                              ></div>
-                            </div>
+                          </dl>
+                          <div className="h-2 w-full rounded-full bg-line overflow-hidden" aria-hidden="true">
+                            <div className="h-full rounded-full bg-accent transition-[width] duration-500" style={{ width: `${Math.min(percent, 100)}%` }} />
                           </div>
                         </div>
                       );
                     })}
                   </div>
-                </div>
+                </Panel>
 
                 {/* 4. Lesson Introduction Block */}
-                <div className="bg-surface p-6 rounded-xl border border-line space-y-3.5">
-                  <h4 className="text-xs uppercase font-display font-semibold tracking-wider text-accent flex items-center gap-1.5">
-                    <BookOpen className="w-4 h-4 text-accent" />
-                    Data Warehouse Architecture & Design Principles
-                  </h4>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs leading-relaxed text-muted">
-                    <div className="bg-subtle p-4 rounded-xl border border-line space-y-1.5">
-                      <span className="text-accent font-display font-semibold font-bold">1. Why Star Schema?</span>
-                      <p className="text-[11px] text-muted">
-                        By normalizing data into simpler dimensions surrounding a central fact table, analytics queries require far fewer multi-table JOINs, slashing database processing loads by up to 80%.
-                      </p>
-                    </div>
-
-                    <div className="bg-subtle p-4 rounded-xl border border-line space-y-1.5">
-                      <span className="text-accent font-display font-semibold font-bold">2. PHP ETL Pipeline</span>
-                      <p className="text-[11px] text-muted">
-                        The custom script extracts raw transactions from the staging database, maps customer loyalty rankings dynamically using aggregated RFM attributes, and loads cleanly into central fact tables.
-                      </p>
-                    </div>
-
-                    <div className="bg-subtle p-4 rounded-xl border border-line space-y-1.5">
-                      <span className="text-accent font-display font-semibold font-bold">3. Database Indexes</span>
-                      <p className="text-[11px] text-muted">
-                        B-Tree indexing is systematically configured on dimension relationships. This guarantees sub-millisecond query responses even as transactional ledger indexes scale to millions of orders.
-                      </p>
-                    </div>
-                  </div>
-                </div>
+                <Panel icon={BookOpen} title="Data warehouse design principles">
+                  <ol className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4">
+                    {PRINCIPLES.map((item, idx) => (
+                      <li key={item.title} className="rounded-2xl bg-subtle p-4 space-y-2">
+                        <span className="inline-flex w-7 h-7 items-center justify-center rounded-full bg-accent text-white text-xs font-bold">
+                          {idx + 1}
+                        </span>
+                        <p className="text-sm font-semibold text-ink">{item.title}</p>
+                        <p className="text-sm text-muted leading-relaxed">{item.body}</p>
+                      </li>
+                    ))}
+                  </ol>
+                </Panel>
 
               </div>
             )}
