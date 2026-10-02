@@ -119,31 +119,25 @@ export default function SchemaVisualizer() {
   };
 
   return (
-    <div id="schema-sec" className="grid grid-cols-1 lg:grid-cols-12 gap-6 bg-surface p-6 rounded-xl border border-line">
+    <section id="schema-sec" className="rounded-[var(--radius-card)] bg-surface shadow-[var(--shadow-card)] p-5 sm:p-6 grid grid-cols-1 gap-6">
       {/* Schema Architecture Intro */}
-      <div className="lg:col-span-12">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-line pb-5">
-          <div>
-            <h3 className="text-base sm:text-lg font-display font-semibold text-accent tracking-wider flex items-center gap-2">
-              <Layers className="text-accent w-5 h-5 animate-pulse" />
-              Data Warehouse Architecture (OLTP vs. OLAP Star Schema)
-            </h3>
-            <p className="text-xs text-muted mt-1">
-              Visualizing how staging transaction entries map to a clean, highly performing Star Schema (built in SQL Server by the ETL).
-            </p>
-          </div>
-          <div className="flex items-center gap-2 bg-subtle px-3.5 py-1.5 rounded-xl border border-line text-[10px] tracking-wider font-mono font-bold text-muted">
-            <span className="w-2 h-2 bg-accent rounded-full animate-ping"></span>
-            <span>MODEL SCHEMATICS ACTIVE</span>
-          </div>
+      <div className="flex items-start gap-3">
+        <span className="w-9 h-9 rounded-full bg-accent-soft text-accent flex items-center justify-center shrink-0">
+          <Layers className="w-4 h-4" aria-hidden="true" />
+        </span>
+        <div className="min-w-0">
+          <h2 className="font-display text-base font-semibold text-ink">Warehouse architecture: OLTP to star schema</h2>
+          <p className="text-sm text-muted mt-0.5">
+            How the source transaction tables map to the star schema the ETL builds in SQL Server. Select a table to see its columns.
+          </p>
         </div>
       </div>
 
       {/* Model Visualizer Map */}
-      <div className="lg:col-span-8 space-y-6">
-        <div className="bg-subtle p-5 rounded-xl border border-line relative overflow-x-auto">
+      <div className="space-y-6 min-w-0">
+        <div className="rounded-2xl bg-subtle p-5 relative overflow-x-auto custom-scrollbar">
           {/* Legend */}
-          <div className="flex flex-wrap gap-4 mb-4 text-[10px] tracking-wider uppercase font-mono">
+          <div className="flex flex-wrap gap-4 mb-4 text-xs">
             <div className="flex items-center gap-1.5 text-muted">
               <span className="w-2.5 h-2.5 bg-surface border border-line rounded-xl"></span>
               OLTP (Raw Transaction Staging)
@@ -153,7 +147,7 @@ export default function SchemaVisualizer() {
               Dimension (Analytical Context Table)
             </div>
             <div className="flex items-center gap-1.5 text-accent">
-              <span className="w-2.5 h-2.5 bg-accent/15 border border-accent rounded-xl animate-pulse"></span>
+              <span className="w-2.5 h-2.5 bg-accent/15 border border-accent rounded-xl"></span>
               Fact Table (Core Numeric Metrics)
             </div>
           </div>
@@ -161,7 +155,7 @@ export default function SchemaVisualizer() {
           <div className="min-w-[650px] space-y-8 py-3">
             {/* Row 1: Source OLTP System */}
             <div>
-              <div className="text-[10px] uppercase tracking-[0.15em] text-muted font-mono font-bold mb-3 flex items-center gap-1">
+              <div className="text-xs font-semibold text-muted mb-3 flex items-center gap-1">
                 <Database className="w-3.5 h-3.5" />
                 Step 1: Raw Transactional Core (OLTP Data Catalog)
               </div>
@@ -177,7 +171,7 @@ export default function SchemaVisualizer() {
                         : "bg-subtle border-line hover:border-line-strong hover:bg-surface"
                     }`}
                   >
-                    <div className="flex items-center gap-1 text-[9px] uppercase tracking-wider text-muted font-mono font-bold mb-1">
+                    <div className="flex items-center gap-1 text-[11px] font-semibold text-muted mb-1">
                       <Table className="w-3.5 h-3.5 text-accent" />
                       OLTP Source
                     </div>
@@ -193,7 +187,7 @@ export default function SchemaVisualizer() {
             {/* Transition ETL pipeline arrow */}
             <div className="flex items-center justify-between px-5 py-3 bg-surface rounded-xl border border-line">
               <div className="flex items-center gap-2 text-xs text-ink font-medium font-mono">
-                <Disc className="w-4 h-4 text-accent animate-spin" />
+                <Disc className="w-4 h-4 text-accent" />
                 PHP Automation Pipeline: (Extract → Transform → Load)
               </div>
               <div className="flex items-center gap-1 text-accent">
@@ -203,7 +197,7 @@ export default function SchemaVisualizer() {
 
             {/* Row 2: DW Schema (Star Schema) */}
             <div>
-              <div className="text-[10px] uppercase tracking-[0.15em] text-muted font-mono font-bold mb-4 flex items-center gap-1">
+              <div className="text-xs font-semibold text-muted mb-4 flex items-center gap-1">
                 <Layers className="w-3.5 h-3.5 text-accent" />
                 Step 2: Multi-Dimensional Schema (Analytics-Optimized Star Schema)
               </div>
@@ -223,12 +217,12 @@ export default function SchemaVisualizer() {
                           : "bg-subtle border-line hover:border-line-strong hover:bg-surface"
                       }`}
                     >
-                      <div className="flex items-center justify-between text-[9px] uppercase tracking-wider text-muted font-mono font-bold mb-1">
+                      <div className="flex items-center justify-between text-[11px] font-semibold text-muted mb-1">
                         <span className="flex items-center gap-1">
                           <Table className="w-3.5 h-3.5 text-accent" />
                           Dimension
                         </span>
-                        <span className="bg-subtle text-accent border border-line text-[8.5px] px-1 rounded-xl font-sans font-bold">CUSTOMERS</span>
+                        <span className="bg-subtle text-accent border border-line text-[10px] px-1.5 py-0.5 rounded-full font-sans font-bold">CUSTOMERS</span>
                       </div>
                       <div className="text-xs font-bold text-ink font-mono">dim_customers</div>
                       <div className="text-[9.5px] text-muted line-clamp-1 mt-1">Slices sales via user RFM Loyalty Tiers</div>
@@ -243,12 +237,12 @@ export default function SchemaVisualizer() {
                           : "bg-subtle border-line hover:border-line-strong hover:bg-surface"
                       }`}
                     >
-                      <div className="flex items-center justify-between text-[9px] uppercase tracking-wider text-muted font-mono font-bold mb-1">
+                      <div className="flex items-center justify-between text-[11px] font-semibold text-muted mb-1">
                         <span className="flex items-center gap-1">
                           <Table className="w-3.5 h-3.5 text-accent" />
                           Dimension
                         </span>
-                        <span className="bg-subtle text-accent border border-line text-[8.5px] px-1 rounded-xl font-sans font-bold">PRODUCTS</span>
+                        <span className="bg-subtle text-accent border border-line text-[10px] px-1.5 py-0.5 rounded-full font-sans font-bold">PRODUCTS</span>
                       </div>
                       <div className="text-xs font-bold text-ink font-mono">dim_products</div>
                       <div className="text-[9.5px] text-muted line-clamp-1 mt-1">Enables inventory & profit margin analysis</div>
@@ -275,12 +269,12 @@ export default function SchemaVisualizer() {
                           : "bg-subtle border-line hover:border-accent/50 hover:bg-surface"
                       }`}
                     >
-                      <div className="flex items-center justify-between text-[9.5px] uppercase tracking-wider text-amber-700 font-mono font-bold mb-2">
+                      <div className="flex items-center justify-between text-[11px] font-semibold text-amber-700 mb-2">
                         <span className="flex items-center gap-1">
                           <Layers className="w-3.5 h-3.5 text-accent" />
                           Fact Table
                         </span>
-                        <span className="bg-surface text-accent border border-line text-[8.5px] px-1.5 py-0.2 rounded-xl">MEASURES</span>
+                        <span className="bg-surface text-accent border border-line text-[10px] px-1.5 py-0.5 rounded-full">MEASURES</span>
                       </div>
                       <div className="text-xs font-bold text-ink font-mono tracking-wider text-center border-b border-line pb-2 mb-2">
                         fact_sales
@@ -304,12 +298,12 @@ export default function SchemaVisualizer() {
                           : "bg-subtle border-line hover:border-line-strong hover:bg-surface"
                       }`}
                     >
-                      <div className="flex items-center justify-between text-[9px] uppercase tracking-wider text-muted font-mono font-bold mb-1">
+                      <div className="flex items-center justify-between text-[11px] font-semibold text-muted mb-1">
                         <span className="flex items-center gap-1">
                           <Table className="w-3.5 h-3.5 text-accent" />
                           Dimension
                         </span>
-                        <span className="bg-subtle text-accent border border-line text-[8.5px] px-1 rounded-xl font-sans font-bold">TIME</span>
+                        <span className="bg-subtle text-accent border border-line text-[10px] px-1.5 py-0.5 rounded-full font-sans font-bold">TIME</span>
                       </div>
                       <div className="text-xs font-bold text-ink font-mono">dim_time</div>
                       <div className="text-[9.5px] text-muted line-clamp-2 mt-1">Calendar dimension avoiding expensive runtime string-to-date queries.</div>
@@ -323,10 +317,10 @@ export default function SchemaVisualizer() {
       </div>
 
       {/* Side Detail Selected Table Panel */}
-      <div className="lg:col-span-4 flex flex-col justify-between">
-        <div className="bg-subtle p-5 rounded-xl border border-line flex-1 flex flex-col">
+      <div className="flex flex-col">
+        <div className="rounded-2xl bg-subtle p-5 flex-1 flex flex-col">
           <div className="border-b border-line pb-3 mb-4">
-            <h4 className="text-[10px] uppercase tracking-[0.12em] text-muted font-mono font-bold flex items-center gap-1.5">
+            <h4 className="text-xs font-semibold text-muted flex items-center gap-1.5">
               <Database className="w-3.5 h-3.5 text-accent" />
               Schema Attribute Index
             </h4>
@@ -347,13 +341,13 @@ export default function SchemaVisualizer() {
             </p>
           </div>
 
-          <div className="flex-1 overflow-y-auto max-h-[280px] space-y-2 pr-1 custom-scrollbar">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {tablesInfo[selectedTable].columns.map((c, idx) => (
               <div key={idx} className="bg-surface p-3 rounded-xl border border-line flex flex-col justify-between text-xs gap-1">
                 <div className="flex items-center justify-between font-mono">
                   <span className="font-bold text-ink flex items-center gap-1">
-                    {c.key === "PK" && <span className="bg-accent/15 text-accent border border-accent/30 text-[8.5px] px-1 rounded-xl font-bold">PK</span>}
-                    {c.key === "FK" && <span className="bg-line text-muted border border-line-strong text-[8.5px] px-1 rounded-xl font-bold">FK</span>}
+                    {c.key === "PK" && <span className="bg-accent/15 text-accent border border-accent/30 text-[10px] px-1.5 py-0.5 rounded-full font-bold">PK</span>}
+                    {c.key === "FK" && <span className="bg-line text-muted border border-line-strong text-[10px] px-1.5 py-0.5 rounded-full font-bold">FK</span>}
                     {c.name}
                   </span>
                   <span className="text-muted text-[10px]">{c.type}</span>
@@ -365,12 +359,12 @@ export default function SchemaVisualizer() {
             ))}
           </div>
 
-          <div className="mt-4 pt-3 border-t border-line text-[10px] text-muted font-mono uppercase tracking-wider text-center flex items-center justify-center gap-1.5">
-            <Link className="w-3 h-3 text-accent" />
-            SELECT TABLE TO VIEW SCHEMA
-          </div>
+          <p className="mt-4 pt-3 border-t border-line text-xs text-muted flex items-center gap-1.5">
+            <Link className="w-3.5 h-3.5 text-accent" aria-hidden="true" />
+            Select a table in the diagram to see its columns.
+          </p>
         </div>
       </div>
-    </div>
+    </section>
   );
 }
